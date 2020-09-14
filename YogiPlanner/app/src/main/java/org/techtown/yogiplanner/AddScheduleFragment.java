@@ -60,11 +60,6 @@ public class AddScheduleFragment extends Fragment {
         end_time = rootView.findViewById(R.id.end_time);
 
         rg = rootView.findViewById(R.id.rg);
-        radio = rootView.findViewById(R.id.radioButton);
-        radio2 = rootView.findViewById(R.id.radioButton2);
-        radio3 = rootView.findViewById(R.id.radioButton3);
-        radio4 = rootView.findViewById(R.id.radioButton4);
-
         memo = rootView.findViewById(R.id.memo);
 
         // 날짜 선택 창
@@ -133,19 +128,19 @@ public class AddScheduleFragment extends Fragment {
                 int _repeat = rg.getCheckedRadioButtonId();
                 String _memo = memo.getText().toString();
 
-                ((MainActivity)getActivity()).insertRecord(_name, _location, _start_date, _start_time,
+                ((MainActivity)getActivity()).insertScheduleRecord(_name, _location, _start_date, _start_time,
                         _end_date, _end_time, _repeat, _memo);
 
                 clearText();
             }
         });
 
-        // 취소 버튼 클릭 이벤트 (임시로 db 조회 함수) + 메인 화면으로 돌아가기
+        // 취소 버튼 클릭 이벤트 (임시로 db 조회 함수)
         Button close_button = rootView.findViewById(R.id.close_button);
         close_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((MainActivity)getActivity()).executeQuery();
+                ((MainActivity)getActivity()).executeScheduleQuery();
 
             }
         });

@@ -83,8 +83,10 @@ public class AddToDoFragment extends Fragment {
                 String _reqTime = reqTime.getText().toString();
                 String _memo = memo.getText().toString();
 
-                ((MainActivity) getActivity()).insertRecord2(_name, _date, _time, _reqTime, _memo);
+                ((MainActivity) getActivity()).insertTodoRecord(_name, _date, _time, _reqTime, _memo);
                 clearText();
+
+                ((MainActivity)getActivity()).priorityTodo(); //할 일을 추가할때마다 새롭게 우선순위를 계산함
             }
         });
 
@@ -93,7 +95,7 @@ public class AddToDoFragment extends Fragment {
         close_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((MainActivity)getActivity()).executeQuery2();
+                ((MainActivity)getActivity()).executeTodoQuery();
             }
         });
 

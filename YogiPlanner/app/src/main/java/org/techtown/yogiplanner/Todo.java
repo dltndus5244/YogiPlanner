@@ -3,9 +3,9 @@ package org.techtown.yogiplanner;
 public class Todo {
     int _id;
     String name;
-    String date;
-    String time;
-    String req_time;
+    String date; //마감날짜
+    String time; //마감시간
+    String req_time; //예상소요시간
     String memo;
 
     public Todo(int _id, String name, String date, String time, String req_time, String memo) {

@@ -28,7 +28,8 @@ public class TodayFragment extends Fragment {
         TodoAdapter adapter = new TodoAdapter();
         recyclerView.setAdapter(adapter);
 
-        ArrayList<Todo> result = ((MainActivity) getActivity()).selectAll2();
+        String sql = "select _id, name, date, time, req_time, memo from todo order by date, time";
+        ArrayList<Todo> result = ((MainActivity) getActivity()).selectTodo(sql);
         adapter.setItems(result);
 
         return rootView;

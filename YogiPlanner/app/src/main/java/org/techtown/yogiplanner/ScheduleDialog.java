@@ -52,6 +52,7 @@ public class ScheduleDialog extends Dialog {
 
     public ScheduleDialog(@NonNull Context context) {
         super(context);
+        this.position = position;
     }
 
     @Override
@@ -69,10 +70,11 @@ public class ScheduleDialog extends Dialog {
         radioButton1 = findViewById(R.id.radioButton);
         memo = findViewById(R.id.memo);
 
-        items = ((MainActivity)MainActivity.mContext).selectAll(); //전체 일정이 들어가 있음
+        String sql = "SELECT * FROM schedule WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
+        items = ((MainActivity)MainActivity.mContext).selectSchedule(sql);
         position = MonthFragment.mPosition;
-//        Log.d("ScheduleDialog", "position : " + position);
 
+        //리사이클러뷰 클릭 위치를 가져와서 위치에 해당하는 아이템의 정보를 보여줌
         Schedule item = items.get(position);
 
         name.setText(item.getName());
@@ -94,6 +96,7 @@ public class ScheduleDialog extends Dialog {
 
         memo.setText(item.getMemo());
 
+        //시작 날짜
         calendar = Calendar.getInstance();
         start_date.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -103,6 +106,7 @@ public class ScheduleDialog extends Dialog {
             }
         });
 
+        //종료 날짜
         end_date.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -113,6 +117,7 @@ public class ScheduleDialog extends Dialog {
 
         calendar1 = Calendar.getInstance();
 
+        //시작 시간
         start_time.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -124,7 +129,7 @@ public class ScheduleDialog extends Dialog {
                 timePickerDialog.show();
             }
         });
-
+        // 종료 시간
         end_time.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -145,6 +150,7 @@ public class ScheduleDialog extends Dialog {
             }
         });
 
+        // 수정 버튼 클릭 이벤트 -> 데이터 수정
         Button re_button = findViewById(R.id.re_button);
         re_button.setOnClickListener(new View.OnClickListener() {
             @Override

@@ -53,7 +53,6 @@ public class MonthFragment extends Fragment {
 
     int dayNum;
 
-    int itemCount;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -63,8 +62,7 @@ public class MonthFragment extends Fragment {
         tvDate = rootView.findViewById(R.id.tv_date);
         gridView = rootView.findViewById(R.id.gridview);
 
-        long now = System.currentTimeMillis();
-        date = new Date(now);
+        date = new Date(System.currentTimeMillis());
 
         final SimpleDateFormat curYearFormat = new SimpleDateFormat("YYYY", Locale.KOREA);
         final SimpleDateFormat curMonthFormat = new SimpleDateFormat("MM", Locale.KOREA);
@@ -80,15 +78,11 @@ public class MonthFragment extends Fragment {
         mCal.set(curYear, curMonth, 1);
         dayNum = mCal.get(Calendar.DAY_OF_WEEK); //이번달 1일이 무슨 요일인지 판단 (1~7:일~월)
 
-
         //이번달 1일 요일의 앞을 공백으로 채움
-        for (int i=1; i<dayNum; i++) {
+        for (int i=1; i<dayNum; i++)
             dayList.add("");
 
-        }
-
         setCalendarDate(mCal.get(Calendar.MONTH)+1);
-
 
         gridAdapter = new GridAdapter(getContext(), dayList);
         gridView.setAdapter(gridAdapter);
@@ -122,9 +116,12 @@ public class MonthFragment extends Fragment {
                 adapter = new ScheduleAdapter();
                 recyclerView.setAdapter(adapter);
 
-                items = ((MainActivity)getActivity()).selectAll();
+                //클릭한 날짜에 맞는 스케줄을 가져와서 리사이클러뷰에 보여줌
+                String sql = "SELECT * FROM schedule WHERE start_date = " + "'" + click_date + "'" + " ORDER BY start_date, start_time";
+                items = ((MainActivity)getActivity()).selectSchedule(sql);
                 adapter.setItems(items);
 
+                //리사이클러뷰의 아이템을 클릭했을 경우 다이얼로그창을 띄워 상세 정보 보여줌
                 adapter.setOnItemClickListener(new OnScheduleItemClickListener() {
                         @Override
                         public void onItemClick(ScheduleAdapter.ViewHolder holder, View view, int position) {
@@ -148,7 +145,7 @@ public class MonthFragment extends Fragment {
 
     }
 
-    public void preCalendar() {
+    public void preCalendar() { //이전 달 달력 셋팅 함수
         dayList.clear();
         mCal = Calendar.getInstance();
 
@@ -165,15 +162,14 @@ public class MonthFragment extends Fragment {
         mCal.set(curYear, curMonth, 1);
         dayNum = mCal.get(Calendar.DAY_OF_WEEK);
 
-        for (int i=1; i<dayNum; i++) {
+        for (int i=1; i<dayNum; i++)
             dayList.add("");
-        }
 
         setCalendarDate(mCal.get(Calendar.MONTH)+1);
         gridAdapter.notifyDataSetChanged();
     }
 
-    public void nextCalendar() {
+    public void nextCalendar() { //다음 달 달력 셋팅 함수
         dayList.clear();
         mCal = Calendar.getInstance();
 
@@ -189,16 +185,17 @@ public class MonthFragment extends Fragment {
 
         mCal.set(curYear, curMonth, 1);
         dayNum = mCal.get(Calendar.DAY_OF_WEEK);
-        Log.d("MonthFragment", "dayNum : " + dayNum);
 
-        for (int i=1; i<dayNum; i++) {
+        for (int i=1; i<dayNum; i++)
             dayList.add("");
-        }
 
         setCalendarDate(mCal.get(Calendar.MONTH)+1);
         gridAdapter.notifyDataSetChanged();
     }
 
+    /*
+    그리드뷰의 아이템을 관리해주는 그리드어댑터
+     */
     private class GridAdapter extends BaseAdapter {
         private final List<String> list;
         private final LayoutInflater inflater;
@@ -231,14 +228,17 @@ public class MonthFragment extends Fragment {
                 convertView = inflater.inflate(R.layout.item_calendar_gridview, parent, false);
                 holder = new ViewHolder();
 
-                holder.tvItemGridView = (TextView) convertView.findViewById(R.id.tv_item_gridview);
-                holder.itemLinear = (LinearLayout) convertView.findViewById(R.id.itemLinear);
+                holder.tvItemGridView = convertView.findViewById(R.id.tv_item_gridview);
+                holder.itemLinear = convertView.findViewById(R.id.itemLinear);
 
                 convertView.setTag(holder);
-            } else {
+            }
+            else {
                 holder = (ViewHolder) convertView.getTag();
+
                 holder.tvItemGridView.setTextColor(getResources().getColor(R.color.button_text));
                 holder.tvItemGridView.setTypeface(null, Typeface.NORMAL);
+
                 holder.itemLinear.setOnTouchListener(new View.OnTouchListener() {
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
@@ -247,18 +247,21 @@ public class MonthFragment extends Fragment {
                 });
             }
 
-            holder.tvItemGridView.setText("" + getItem(position));
+            holder.tvItemGridView.setText("" + getItem(position)); //그리드뷰에 날짜 표시해줌
 
             mCal = Calendar.getInstance();
-            Integer month = mCal.get(Calendar.MONTH);
-            Integer today = mCal.get(Calendar.DAY_OF_MONTH);
+
+            int month = mCal.get(Calendar.MONTH);
+            int today = mCal.get(Calendar.DAY_OF_MONTH);
             String sToday = String.valueOf(today);
 
+            //오늘날짜에 빨간색 표시(색은 후에 수정)
             if (month == curMonth && sToday.equals(getItem(position))) {
                 holder.tvItemGridView.setTextColor(getResources().getColor(R.color.today));
                 holder.tvItemGridView.setTypeface(null, Typeface.BOLD);
             }
 
+            //빈 공간 클릭 못하게
             if (getItem(position) == "") {
                 holder.itemLinear.setOnTouchListener(new View.OnTouchListener() {
                     @Override
@@ -267,6 +270,14 @@ public class MonthFragment extends Fragment {
                     }
                 });
             }
+
+            /*
+            추가해야 할 것
+            1. 아이템이 있으면 별표 표시 또는 색깔로든..표시해주기
+            2. 첫 화면이 오늘날짜 리사이클러뷰 보여주도록?
+            3. 반복체크 돼 있으면 주마다,,달마다,, 넣어주기
+             */
+
             return convertView;
         }
     }
@@ -284,5 +295,4 @@ public class MonthFragment extends Fragment {
             return String.valueOf(i);
         }
     }
-
 }
