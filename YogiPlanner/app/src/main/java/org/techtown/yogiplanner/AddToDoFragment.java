@@ -18,6 +18,7 @@ import android.widget.TimePicker;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 
 
 public class AddToDoFragment extends Fragment {
@@ -72,7 +73,10 @@ public class AddToDoFragment extends Fragment {
             }
         });
 
-        // 추가 버튼 클릭 이벤트
+        /*
+            추가 버튼 이벤트 -> 할 일 DB에 추가
+            우선순위를 계산해서 db에 넣어지도록 수정함
+         */
         Button add_button = rootView.findViewById(R.id.add_button);
         add_button.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -82,11 +86,12 @@ public class AddToDoFragment extends Fragment {
                 String _time = time.getText().toString();
                 String _reqTime = reqTime.getText().toString();
                 String _memo = memo.getText().toString();
+                float _priority = (float) getRemainTime(_date, _time) / Float.parseFloat(_reqTime);
+                Log.d("Todo", "우선순위 : " + _priority);
 
-                ((MainActivity) getActivity()).insertTodoRecord(_name, _date, _time, _reqTime, _memo);
+                ((MainActivity)getActivity()).insertTodoRecord(_name, _date, _time, _reqTime, _memo, _priority);
                 clearText();
 
-                ((MainActivity)getActivity()).priorityTodo(); //할 일을 추가할때마다 새롭게 우선순위를 계산함
             }
         });
 
@@ -100,6 +105,62 @@ public class AddToDoFragment extends Fragment {
         });
 
         return rootView;
+    }
+
+    public int getRemainTime(String endDate, String endTime)  { //여유시간 구하는 함수
+        int result;
+        int result1, result2 = 0, result3;
+
+        String sEndDate = "";
+        String sCurDate = "";
+
+        SimpleDateFormat hourFormat = new SimpleDateFormat("HH"); //분 단위는 해결해야함.,
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+
+        Date dToday = new Date(System.currentTimeMillis());
+        int curTime = Integer.parseInt(hourFormat.format(dToday));
+
+        String[] splitEndDate = endDate.split("/");
+
+        for (int i=0; i<splitEndDate.length; i++)
+            sEndDate = sEndDate + splitEndDate[i];
+
+        sCurDate = dateFormat.format(dToday);
+
+        //result1
+        if (sEndDate.equals(sCurDate))
+            result1 = 0;
+        else
+            result1 = 24 - curTime;
+
+        //result2
+        if (sEndDate.equals(sCurDate))
+            result2 = 0;
+        else {
+            try {
+                Date dCurDate = dateFormat.parse(sCurDate);
+                Date dEndDate = dateFormat.parse(sEndDate);
+
+                long diffDay = (dEndDate.getTime() - dCurDate.getTime()) / (24 * 60 * 60 * 1000);
+                result2 = ((int) diffDay - 1) * 24;
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        String splitEndTime[] = endTime.split(":");
+
+        //result3
+        if (sEndDate.equals(sCurDate)) {
+            result3 = Integer.parseInt(splitEndTime[0]) - curTime;
+        }
+        else {
+            result3 = Integer.parseInt(splitEndTime[0]);
+        }
+
+        result = result1 + result2 + result3;
+        return result;
     }
 
     Calendar myCalendar = Calendar.getInstance();

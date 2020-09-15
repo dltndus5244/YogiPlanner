@@ -7,14 +7,17 @@ public class Todo {
     String time; //마감시간
     String req_time; //예상소요시간
     String memo;
+    float priority;
 
-    public Todo(int _id, String name, String date, String time, String req_time, String memo) {
+
+    public Todo(int _id, String name, String date, String time, String req_time, String memo, float priority) {
         this._id = _id;
         this.name = name;
         this.date = date;
         this.time = time;
         this.req_time = req_time;
         this.memo = memo;
+        this.priority = priority;
     }
 
     public int get_id() {
@@ -64,4 +67,14 @@ public class Todo {
     public void setMemo(String memo) {
         this.memo = memo;
     }
+
+    public float getPriority() {
+        return priority;
+    }
+
+    public void setPriority(float priority) {
+        this.priority = priority;
+    }
+
+
 }

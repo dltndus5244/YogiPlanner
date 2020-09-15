@@ -78,7 +78,6 @@ public class MainActivity extends AppCompatActivity {
         createScheduleTable();
         createTodoTable();
 
-        priorityTodo();
 
     }
 
@@ -114,7 +113,8 @@ public class MainActivity extends AppCompatActivity {
                 + "date text, "
                 + "time text, "
                 + "req_time text, "
-                + "memo text)";
+                + "memo text, "
+                + "priority real)";
 
         database.execSQL(sql);
         Log.d("MainActivity", "todo 테이블 생성");
@@ -132,12 +132,14 @@ public class MainActivity extends AppCompatActivity {
         database.execSQL(sql);
     }
 
-    public void insertTodoRecord(String name, String date, String time, String req_time, String memo) { //할 일 추가 함수 - AddTodoFragment 에서 사용
+    public void insertTodoRecord(String name, String date, String time, String req_time, String memo, float priority) { //할 일 추가 함수 - AddTodoFragment 에서 사용
         String sql = "INSERT INTO todo"
-                + "(name, date, time, req_time, memo)"
-                + "VALUES ("
-                + "'" + name + "', '" + date + "', '" + time + "', '" + req_time + "', '" + memo + "')";
+                + "(name, date, time, req_time, memo, priority)"
+                + " VALUES ( "
+                + "'" + name + "', '" + date + "', '" + time + "', '" + req_time + "', '" + memo + "' , " + priority + ")";
+
         database.execSQL(sql);
+        Log.d("MainActivity", "todo 데이터 추가");
     }
 
     public void executeScheduleQuery() { //schedule 테이블 조회 함수(확인용) - AddScheduleFragment
@@ -163,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void executeTodoQuery() { //todo 테이블 조회 함수(확인용) - AddToDoFragment
-        String sql = "SELECT _id, name, date, time, req_time, memo from todo ORDER BY date, time";
+        String sql = "SELECT * from todo ORDER BY date, time";
         Cursor cursor = database.rawQuery(sql,null);
 
         for (int i=0; i<cursor.getCount(); i++) {
@@ -175,9 +177,10 @@ public class MainActivity extends AppCompatActivity {
             String time = cursor.getString(3);
             String req_time = cursor.getString(4);
             String memo = cursor.getString(5);
+            float priority = cursor.getFloat(6);
 
             Log.d("MainActivity", "레코드#" + i + " : " + id + ", " + name + ", " + date + ", " +
-                    time + ", " + req_time + ", " + memo);
+                    time + ", " + req_time + ", " + memo + ", " + priority);
         }
         cursor.close();
     }
@@ -216,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
         return result; //쿼리 수행 결과 저장 배열
     }
 
-    /* 쿼리 수행 결과에 따라 Schedule 테이블의 데이터를 배열에 넣어줌
+    /* 쿼리 수행 결과에 따라 Todo 테이블의 데이터를 배열에 넣어줌
     매개변수 : String sql
     사용 : TodayFragment
  */
@@ -234,8 +237,9 @@ public class MainActivity extends AppCompatActivity {
                 String time = cursor.getString(3);
                 String req_time = cursor.getString(4);
                 String memo = cursor.getString(5);
+                float priority = cursor.getFloat(6);
 
-                Todo todo_item = new Todo(id, name, date, time, req_time, memo);
+                Todo todo_item = new Todo(id, name, date, time, req_time, memo, priority);
                 result.add(todo_item);
             }
         } catch (Exception e) {
@@ -289,99 +293,4 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    /* 중요도 계산 함수
-        중요도(priority) : 여유시간 / 예상소요시간 (값이 작은 것이 중요도가 높음)
-
-        ArrayList<Todo> todo - 오늘 날짜 이후의 할 일을 담는 배열
-        ArrayList<Todo> result - 중요도 순서에 따라 정렬한 배열(중요도가 높은 순서대로)
-     */
-
-    public ArrayList<Todo> priorityTodo() {
-        ArrayList<Todo> todo;
-        ArrayList<Todo> result = new ArrayList<Todo>();
-
-        Date dToday = new Date(System.currentTimeMillis());
-        SimpleDateFormat sdf = new SimpleDateFormat("YYYY/MM/dd");
-        String sToday = sdf.format(dToday);
-
-        String sql = "SELECT * FROM todo WHERE date >= " + "'" + sToday + "'" + " ORDER BY date, time";
-        todo = selectTodo(sql);
-
-        for (int i=0; i<todo.size(); i++) {
-            Todo item = todo.get(i);
-            int remain_time = getRemainTime(item.getDate(), item.getTime());
-            float priority = (float) remain_time / Float.parseFloat(item.getReq_time());
-
-            Log.d("MainActivity", "이름 : " + item.getName() + ", 마감날짜 : " + item.getDate()
-                    + ", 마감시간 : " + item.getTime() + ", 여유시간 : " + remain_time + ", 중요도 : " + priority);
-            /*
-                result에 넣은 후 정렬하려면 디비 테이블을 새로 만들어야함..(중요도를 사용 못하기 때문....)
-                이 for문 안에서 정렬해서 result에 넣는 방법이 있을까? 생각해보장 2중for문?
-             */
-        }
-        return result;
-    }
-
-    /*
-        여유시간 계산 함수(getRemainTime)
-        매개변수 : endDate - 마감날짜, endTime - 마감시간
-
-        1. result1 = 23 - 현재시간(curTime)
-        2. result2 = (마감날짜-오늘날짜-1) * 15
-        3. result3 = 마감시간 - 8
-
-        result(여유시간 ) = result1 + result2 + result3
-     */
-    public int getRemainTime(String endDate, String endTime)  { //여유시간 구하는 함수
-        int result;
-        int result1, result2 = 0, result3;
-
-        String sEndDate = "";
-        String sCurDate = "";
-
-        SimpleDateFormat hourFormat = new SimpleDateFormat("HH"); //분 단위는 해결해야함.,
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-
-        Date dToday = new Date(System.currentTimeMillis());
-        int curTime = Integer.parseInt(hourFormat.format(dToday));
-
-        String[] splitEndDate = endDate.split("/");
-
-        for (int i=0; i<splitEndDate.length; i++)
-            sEndDate = sEndDate + splitEndDate[i];
-
-        sCurDate = dateFormat.format(dToday);
-
-        if (curTime < 8 || curTime > 23 || sEndDate.equals(sCurDate))
-            result1 = 0;
-        else
-            result1 = 23 - curTime;
-
-        if (sEndDate.equals(sCurDate))
-            result2 = 0;
-        else {
-            try {
-                Date dCurDate = dateFormat.parse(sCurDate);
-                Date dEndDate = dateFormat.parse(sEndDate);
-
-                long diffDay = (dEndDate.getTime() - dCurDate.getTime()) / (24 * 60 * 60 * 1000);
-                result2 = ((int) diffDay - 1) * 15;
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        String splitEndTime[] = endTime.split(":");
-
-        if (sEndDate.equals(sCurDate)) {
-            result3 = Integer.parseInt(splitEndTime[0]) - curTime;
-        }
-        else {
-            result3 = Integer.parseInt(splitEndTime[0]) - 8;
-        }
-
-        result = result1 + result2 + result3;
-        return result;
-    }
 }
