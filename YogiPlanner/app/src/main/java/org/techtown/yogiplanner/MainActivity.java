@@ -78,7 +78,6 @@ public class MainActivity extends AppCompatActivity {
         createScheduleTable();
         createTodoTable();
 
-
     }
 
     public void replaceFragment(Fragment fragment) { //프래그먼트 교체 함수

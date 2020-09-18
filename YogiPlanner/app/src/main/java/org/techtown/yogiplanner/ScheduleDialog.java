@@ -45,7 +45,6 @@ public class ScheduleDialog extends Dialog {
     int position;
 
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
-    SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
 
     Calendar calendar;
     Calendar calendar1;

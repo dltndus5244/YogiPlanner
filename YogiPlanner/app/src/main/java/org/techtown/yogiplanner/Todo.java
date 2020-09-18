@@ -9,7 +9,6 @@ public class Todo {
     String memo;
     float priority;
 
-
     public Todo(int _id, String name, String date, String time, String req_time, String memo, float priority) {
         this._id = _id;
         this.name = name;
@@ -18,6 +17,7 @@ public class Todo {
         this.req_time = req_time;
         this.memo = memo;
         this.priority = priority;
+
     }
 
     public int get_id() {

@@ -20,7 +20,7 @@
         android:id="@+id/tab3"
         android:enabled="true"
         android:icon="@drawable/today"
-        android:title="일간"
+        android:title="Todo"
         app:showAsAction="withText"></item>
 
     <item
