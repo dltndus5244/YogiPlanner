@@ -19,21 +19,8 @@
     <item
         android:id="@+id/tab3"
         android:enabled="true"
-        android:icon="@drawable/today"
-        android:title="Todo"
+        android:icon="@drawable/check"
+        android:title="할 일"
         app:showAsAction="withText"></item>
 
-    <item
-        android:id="@+id/tab4"
-        android:enabled="true"
-        android:icon="@drawable/add"
-        android:title="일정 추가"
-        app:showAsAction="withText"></item>
-
-    <item
-        android:id="@+id/tab5"
-        android:enabled="true"
-        android:icon="@drawable/add"
-        android:title="할 일 추가"
-        app:showAsAction="withText"></item>
 </menu>

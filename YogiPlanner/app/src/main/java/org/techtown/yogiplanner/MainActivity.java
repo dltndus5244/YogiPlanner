@@ -12,8 +12,13 @@ import android.os.Bundle;
 import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.MenuItem;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.Toast;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -21,20 +26,11 @@ import java.time.Month;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-<<<<<<< HEAD
-=======
-import java.util.Collection;
->>>>>>> ae98ecdca825873061510f315f0eab6e492a25ad
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
-<<<<<<< HEAD
-=======
-import java.util.List;
-import java.util.Map;
->>>>>>> ae98ecdca825873061510f315f0eab6e492a25ad
 
 public class MainActivity extends AppCompatActivity {
     MonthFragment monthFragment;
@@ -49,6 +45,10 @@ public class MainActivity extends AppCompatActivity {
 
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
     SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
+
+    private FloatingActionButton fab_main, fab_sub1, fab_sub2;
+    private Animation fab_open, fab_close;
+    private boolean isFabOpen = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,20 +73,54 @@ public class MainActivity extends AppCompatActivity {
                 switch (item.getItemId()) {
                     case R.id.tab1:
                         replaceFragment(monthFragment);
+                        fab_main.show();
                         return true;
                     case R.id.tab2:
                         replaceFragment(weekFragment);
+                        fab_main.show();
                         return true;
                     case R.id.tab3:
                         replaceFragment(todayFragment);
+                        fab_main.show();
                         return true;
-                    case R.id.tab4:
-                        replaceFragment(scheduleFragment);
-                        return true;
-                    case R.id.tab5:
-                        replaceFragment(toDoFragment);
                 }
                 return false;
+            }
+        });
+
+        fab_open = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fab_open);
+        fab_close = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fab_close);
+
+        fab_main = findViewById(R.id.fab_main);
+        fab_sub1 = findViewById(R.id.fab_sub1);
+        fab_sub2 = findViewById(R.id.fab_sub2);
+
+        fab_main.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+               toggleFab();
+            }
+        });
+
+        fab_sub1.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleFab();
+                replaceFragment(scheduleFragment);
+                fab_main.hide();
+//                fab_sub1.hide();
+//                fab_sub2.hide();
+            }
+        });
+
+        fab_sub2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                toggleFab();
+                replaceFragment(toDoFragment);
+                fab_main.hide();
+//                fab_sub1.hide();
+//                fab_sub2.hide();
             }
         });
 
@@ -95,6 +129,26 @@ public class MainActivity extends AppCompatActivity {
         createScheduleTable();
         createTodoTable();
 
+    }
+
+    private void toggleFab() {
+        if(isFabOpen) {
+            fab_main.setImageResource(R.drawable.add);
+            fab_sub1.startAnimation(fab_close);
+            fab_sub2.startAnimation(fab_close);
+
+            fab_sub1.setClickable(false);
+            fab_sub2.setClickable(false);
+            isFabOpen = false;
+        } else {
+            fab_main.setImageResource(R.drawable.close);
+            fab_sub1.startAnimation(fab_open);
+            fab_sub2.startAnimation(fab_open);
+
+            fab_sub1.setClickable(true);
+            fab_sub2.setClickable(true);
+            isFabOpen = true;
+        }
     }
 
     public void replaceFragment(Fragment fragment) { //프래그먼트 교체 함수
@@ -159,8 +213,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void executeScheduleQuery() { //schedule 테이블 조회 함수(확인용) - AddScheduleFragment
-        String sql = "SELECT _id, name, location, start_date, start_time, end_date, end_time, repeat, memo from schedule ORDER BY start_date, start_time";
-        Cursor cursor = database.rawQuery(sql, null);
+        Cursor cursor = database.rawQuery("SELECT _id, name, location, start_date, start_time, " +
+                "end_date, end_time, repeat, memo from schedule ORDER BY start_date, start_time" , null);
 
         for (int i=0; i<cursor.getCount(); i++) {
             cursor.moveToNext();
@@ -327,7 +381,6 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-<<<<<<< HEAD
     public void deleteSchedule2(int position) { // schedule 데이터 삭제
 
         ArrayList<Schedule> items = WeekFragment.week_items;
@@ -390,8 +443,6 @@ public class MainActivity extends AppCompatActivity {
         TodayFragment.recyclerView.setAdapter(adapter);
     }
 
-=======
->>>>>>> ae98ecdca825873061510f315f0eab6e492a25ad
     public void assignTodo() { //여유시간 배열 생성 및 할일 할당
         LinkedHashMap<Integer, LinkedList<ArrayList<String>>> spareTimes = new LinkedHashMap<Integer, LinkedList<ArrayList<String>>>();
         ArrayList<Schedule> schedules = new ArrayList<Schedule>();
