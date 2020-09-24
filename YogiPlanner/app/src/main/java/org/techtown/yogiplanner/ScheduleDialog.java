@@ -225,6 +225,7 @@ public class ScheduleDialog extends Dialog {
             }
         });
 
+        // 삭제 버튼 클릭 이벤트 -> 데이터 수정
         Button del_button = findViewById(R.id.del_button);
         del_button.setOnClickListener(new View.OnClickListener() {
             @Override

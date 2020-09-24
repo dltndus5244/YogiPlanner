@@ -190,9 +190,25 @@ public class MainActivity extends AppCompatActivity {
         Log.d("MainActivity", "todo 테이블 생성");
     }
 
+    private void createTimeTable() { // Time 테이블 생성
+        String sql = "CREATE TABLE IF NOT EXISTS time ("
+                + "_id integer PRIMARY KEY autoincrement, "
+                + "name text, "
+                + "location text, "
+                + "start_date text, "
+                + "start_time text, "
+                + "end_date text, "
+                + "end_time text, "
+                + "repeat text, "
+                + "memo text, "
+                + "type text)";
+
+        database.execSQL(sql);
+        Log.d("MainActivity", "time 테이블 생성");
+    }
+
     public void insertScheduleRecord(String name, String location, String start_date, String start_time,
                              String end_date, String end_time, int repeat, String memo) { //스케줄 추가 함수 - AddScheduleFragment 에서 사용
-        Log.d("MainActivity", "insertRecord 실행됨");
 
         String sql = "INSERT INTO schedule"
                 + "(name, location, start_date, start_time, end_date, end_time, repeat, memo)"
@@ -200,6 +216,7 @@ public class MainActivity extends AppCompatActivity {
                 + "'" + name + "' , '" + location + "', '" + start_date + "', '" + start_time
                 + "', '" +  end_date + "', '" + end_time + "', " + repeat + " , '" + memo + "')";
         database.execSQL(sql);
+        Log.d("MainActivity", "schedule 데이터 추가");
     }
 
     public void insertTodoRecord(String name, String date, String time, String req_time, String memo, float priority) { //할 일 추가 함수 - AddTodoFragment 에서 사용
@@ -210,6 +227,18 @@ public class MainActivity extends AppCompatActivity {
 
         database.execSQL(sql);
         Log.d("MainActivity", "todo 데이터 추가");
+    }
+
+    public void insertTimeRecord(String name, String location, String start_date, String start_time,
+                                     String end_date, String end_time, int repeat, String memo, String type) { //스케줄 추가 함수 - ?? 에서 사용
+
+        String sql = "INSERT INTO time"
+                + "(name, location, start_date, start_time, end_date, end_time, repeat, memo, type)"
+                + " VALUES ( "
+                + "'" + name + "' , '" + location + "', '" + start_date + "', '" + start_time
+                + "', '" +  end_date + "', '" + end_time + "', " + repeat + ", '" + memo + "', '" + type + "')";
+        database.execSQL(sql);
+        Log.d("MainActivity", "time 데이터 추가");
     }
 
     public void executeScheduleQuery() { //schedule 테이블 조회 함수(확인용) - AddScheduleFragment
@@ -251,6 +280,28 @@ public class MainActivity extends AppCompatActivity {
 
             Log.d("MainActivity", "레코드#" + i + " : " + id + ", " + name + ", " + date + ", " +
                     time + ", " + req_time + ", " + memo + ", " + priority);
+        }
+        cursor.close();
+    }
+
+    public void executeTimeQuery() { //time 테이블 조회 함수(확인용) - ???
+        Cursor cursor = database.rawQuery("SELECT * from time ORDER BY start_date, start_time" , null);
+
+        for (int i=0; i<cursor.getCount(); i++) {
+            cursor.moveToNext();
+            int id = cursor.getInt(0);
+            String name = cursor.getString(1);
+            String location = cursor.getString(2);
+            String start_date = cursor.getString(3);
+            String start_time = cursor.getString(4);
+            String end_date = cursor.getString(5);
+            String end_time = cursor.getString(6);
+            String repeat = cursor.getString(7);
+            String memo = cursor.getString(8);
+            String type = cursor.getString(9);
+
+            Log.d("MainActivity", "레코드#" + i + " : " + id + ", " + name + ", " + location + ", " +
+                    start_date + ", " + start_time + ", " + end_date + ", " + end_time + ", " + repeat + ", " + memo + ", " + type);
         }
         cursor.close();
     }
