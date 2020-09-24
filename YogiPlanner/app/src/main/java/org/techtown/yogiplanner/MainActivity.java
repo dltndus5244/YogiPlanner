@@ -21,11 +21,20 @@ import java.time.Month;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+<<<<<<< HEAD
+=======
+import java.util.Collection;
+>>>>>>> ae98ecdca825873061510f315f0eab6e492a25ad
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+<<<<<<< HEAD
+=======
+import java.util.List;
+import java.util.Map;
+>>>>>>> ae98ecdca825873061510f315f0eab6e492a25ad
 
 public class MainActivity extends AppCompatActivity {
     MonthFragment monthFragment;
@@ -150,8 +159,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void executeScheduleQuery() { //schedule 테이블 조회 함수(확인용) - AddScheduleFragment
-        Cursor cursor = database.rawQuery("SELECT _id, name, location, start_date, start_time, " +
-                "end_date, end_time, repeat, memo from schedule ORDER BY start_date, start_time" , null);
+        String sql = "SELECT _id, name, location, start_date, start_time, end_date, end_time, repeat, memo from schedule ORDER BY start_date, start_time";
+        Cursor cursor = database.rawQuery(sql, null);
 
         for (int i=0; i<cursor.getCount(); i++) {
             cursor.moveToNext();
@@ -318,6 +327,7 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+<<<<<<< HEAD
     public void deleteSchedule2(int position) { // schedule 데이터 삭제
 
         ArrayList<Schedule> items = WeekFragment.week_items;
@@ -380,6 +390,8 @@ public class MainActivity extends AppCompatActivity {
         TodayFragment.recyclerView.setAdapter(adapter);
     }
 
+=======
+>>>>>>> ae98ecdca825873061510f315f0eab6e492a25ad
     public void assignTodo() { //여유시간 배열 생성 및 할일 할당
         LinkedHashMap<Integer, LinkedList<ArrayList<String>>> spareTimes = new LinkedHashMap<Integer, LinkedList<ArrayList<String>>>();
         ArrayList<Schedule> schedules = new ArrayList<Schedule>();
