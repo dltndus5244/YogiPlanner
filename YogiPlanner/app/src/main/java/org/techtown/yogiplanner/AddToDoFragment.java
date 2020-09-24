@@ -65,7 +65,7 @@ public class AddToDoFragment extends Fragment {
         time.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int hour = calendar1.get(Calendar.HOUR);
+                int hour = calendar1.get(Calendar.HOUR_OF_DAY);
                 int minute = calendar1.get(Calendar.MINUTE);
 
                 TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), myTimePicker, hour, minute, false);

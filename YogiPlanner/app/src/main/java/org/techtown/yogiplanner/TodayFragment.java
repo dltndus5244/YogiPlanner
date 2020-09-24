@@ -16,6 +16,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 
 public class TodayFragment extends Fragment {
+    private TodoDialog dialog;
+    static TodoAdapter adapter;
+    static int passedPosition;
+    static RecyclerView recyclerView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -23,12 +27,12 @@ public class TodayFragment extends Fragment {
 
         ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.fragment_today, container, false);
 
-        RecyclerView recyclerView = rootView.findViewById(R.id.recyclerView);
+        recyclerView = rootView.findViewById(R.id.recyclerView);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
 
-        TodoAdapter adapter = new TodoAdapter();
+        adapter = new TodoAdapter();
         recyclerView.setAdapter(adapter);
 
         Calendar calendar = Calendar.getInstance();
@@ -38,11 +42,22 @@ public class TodayFragment extends Fragment {
         String todayDate = sdf.format(calendar.getTime());
         String todayTime = sdf2.format(calendar.getTime());
 
-        Log.d("TodayFragment", todayDate + ", " + todayTime);
-
-        String sql = "SELECT * FROM todo WHERE date >= '" + todayDate + "' AND time >= '" + todayTime + "' order by priority";
+//        String sql = "SELECT * FROM todo WHERE date >= '" + todayDate + "' AND time >= '" + todayTime + "' ORDER BY date, time";
+        String sql = "SELECT * FROM todo WHERE (date = '" + todayDate + "' AND time >= '" + todayTime + "') OR date > '" + todayDate + "' ORDER BY date, time";
         ArrayList<Todo> result = ((MainActivity) getActivity()).selectTodo(sql);
+
+
         adapter.setItems(result);
+
+        adapter.setOnItemClickListener(new OnTodoItemClickListener() {
+            @Override
+            public void onItemClick(TodoAdapter.ViewHolder holder, View view, int position) {
+                passedPosition = position;
+
+                dialog = new TodoDialog(getContext());
+                dialog.show();
+            }
+        });
 
         return rootView;
     }

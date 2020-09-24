@@ -62,7 +62,6 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHo
 
     @Override
     public void onItemClick(ViewHolder holder, View view, int position) {
-        Log.d("ScheduleAdapter","click_position : " + position);
         if (listener != null) {
             listener.onItemClick(holder, view, position);
         }

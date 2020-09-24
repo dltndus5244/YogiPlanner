@@ -17,6 +17,7 @@ import android.widget.Button;
 import android.widget.GridView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -29,9 +30,9 @@ import java.util.Random;
 
 
 public class WeekFragment extends Fragment {
-    GridView gridView;
-    GridAdapter adapter;
-    ArrayList<String> timeList;
+    static GridView gridView;
+    static GridAdapter adapter;
+    static ArrayList<String> timeList;
     ArrayList<Schedule> items;
     TextView tv_date;
 
@@ -41,6 +42,10 @@ public class WeekFragment extends Fragment {
 
     static ArrayList<Schedule> week_items;
     int mPosition;
+
+    static int passedIndex;
+    static int passedPosition;
+    private ScheduleDialog2 dialog;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -53,6 +58,7 @@ public class WeekFragment extends Fragment {
 
         timeList = new ArrayList<String>();
         setTimeList();
+
 
         adapter = new GridAdapter(getContext(), timeList);
         gridView.setAdapter(adapter);
@@ -89,11 +95,15 @@ public class WeekFragment extends Fragment {
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.d("WeekFragment", "position:"+position);
-                Log.d("WeekFragment", "mPosition:"+mPosition);
                 //아이템 클릭하면 다이얼로그 창 띄워주는거 구현해야함
-
-
+                //클릭한 포지션의 스케줄의 아이디를 넘기면 되지 않을까? 아이디를 어떻게 알아낼건데....?
+                if (timeList.get(position) != "") {
+                    passedPosition = position;
+                    passedIndex = Integer.parseInt(timeList.get(position));
+                    Log.d("WeekFragment", "포지션 : " + passedIndex);
+                    dialog = new ScheduleDialog2(getContext());
+                    dialog.show();
+                }
             }
         });
 
@@ -202,9 +212,10 @@ public class WeekFragment extends Fragment {
         /*
     그리드뷰의 아이템을 관리해주는 그리드어댑터
      */
-    private class GridAdapter extends BaseAdapter {
+    public class GridAdapter extends BaseAdapter {
         private final List<String> list;
         private final LayoutInflater inflater;
+        ArrayList<Schedule> items = new ArrayList<>();
 
         public GridAdapter(Context context, List<String> list) {
             this.list = list;
@@ -226,6 +237,10 @@ public class WeekFragment extends Fragment {
             return position;
         }
 
+        public void setItems(ArrayList<Schedule> items) {
+            this.items = items;
+        }
+
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             ViewHolder holder = null;
@@ -236,7 +251,6 @@ public class WeekFragment extends Fragment {
 
                 holder.textView = convertView.findViewById(R.id.textView);
                 holder.linearLayout = convertView.findViewById(R.id.linearLayout);
-
                 convertView.setTag(holder);
             }
             else {
@@ -299,6 +313,7 @@ public class WeekFragment extends Fragment {
                         }
                         mPosition += 8;
                     }
+                list.set(startPosition, String.valueOf(i));
             }
 
             return convertView;

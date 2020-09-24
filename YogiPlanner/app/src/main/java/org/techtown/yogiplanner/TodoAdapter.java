@@ -13,8 +13,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.ViewHolder>{
+public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.ViewHolder>
+                                        implements OnTodoItemClickListener {
     ArrayList<Todo> items = new ArrayList<Todo>();
+    OnTodoItemClickListener listener;
 
     @NonNull
     @Override
@@ -22,7 +24,7 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.ViewHolder>{
         LayoutInflater inflater = LayoutInflater.from(parent.getContext());
         View itemView = inflater.inflate(R.layout.todo_item, parent, false);
 
-        return new ViewHolder(itemView);
+        return new ViewHolder(itemView, this);
     }
 
     @Override
@@ -52,6 +54,17 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.ViewHolder>{
         items.set(position, item);
     }
 
+    public void setOnItemClickListener(OnTodoItemClickListener listener) {
+        this.listener = listener;
+    }
+
+    @Override
+    public void onItemClick(ViewHolder holder, View view, int position) {
+        if (listener != null) {
+            listener.onItemClick(holder, view, position);
+        }
+    }
+
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView name;
         TextView dueDate;
@@ -60,7 +73,7 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.ViewHolder>{
         TextView dHour;
         TextView dMinute;
 
-        public ViewHolder(@NonNull View itemView) {
+        public ViewHolder(@NonNull View itemView, final OnTodoItemClickListener listener) {
             super(itemView);
 
             name = itemView.findViewById(R.id.name);
@@ -70,6 +83,17 @@ public class TodoAdapter extends RecyclerView.Adapter<TodoAdapter.ViewHolder>{
             dDay = itemView.findViewById(R.id.dDay);
             dHour = itemView.findViewById(R.id.dHour);
             dMinute = itemView.findViewById(R.id.dMinute);
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    int position = getAdapterPosition();
+
+                    if (listener != null) {
+                        listener.onItemClick(ViewHolder.this, v, position);
+                    }
+                }
+            });
         }
 
         public void setItem(Todo item) {

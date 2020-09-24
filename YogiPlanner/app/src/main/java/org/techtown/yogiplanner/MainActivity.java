@@ -19,8 +19,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Month;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 
 public class MainActivity extends AppCompatActivity {
     MonthFragment monthFragment;
@@ -32,6 +37,9 @@ public class MainActivity extends AppCompatActivity {
     public static SQLiteDatabase database;
 
     public static Context mContext;
+
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
+    SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -274,6 +282,24 @@ public class MainActivity extends AppCompatActivity {
         MonthFragment.recyclerView.setAdapter(adapter);
     }
 
+    public void updateSchedule2(int position, String dname, String dlocation, String dstart_date, String dstart_time,
+                               String dend_date, String dend_time, int drepeat, String dmemo) {
+
+        ArrayList<Schedule> items = WeekFragment.week_items;
+        Schedule item = items.get(position);
+
+        String update_sql = "UPDATE schedule SET name = " + "'" + dname + "', location = " + "'" + dlocation + "', start_date = " + "'" + dstart_date +
+                "', start_time = " + "'" + dstart_time + "', end_date = " + "'" + dend_date +
+                "', end_time = " + "'" + dend_time + "', repeat = " + drepeat + ", memo = " + "'" + dmemo +
+                "' WHERE _id = " + item.get_id();
+
+        database.execSQL(update_sql);
+
+        weekFragment.findWeekSchedule();
+        WeekFragment.adapter.setItems(items);
+        WeekFragment.adapter.notifyDataSetChanged();
+    }
+
     public void deleteSchedule(int position) { // schedule 데이터 삭제
         String sql = "SELECT * FROM schedule WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
         ArrayList<Schedule> items = selectSchedule(sql);
@@ -292,4 +318,183 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    public void deleteSchedule2(int position) { // schedule 데이터 삭제
+
+        ArrayList<Schedule> items = WeekFragment.week_items;
+        Schedule item = items.get(position);
+
+        String delete_sql = "DELETE FROM schedule WHERE _id = " + item.get_id();
+        database.execSQL(delete_sql);
+
+        WeekFragment.timeList.set(WeekFragment.passedPosition, "");
+        weekFragment.findWeekSchedule();
+        WeekFragment.adapter.setItems(items);
+        WeekFragment.adapter.notifyDataSetChanged();
+    }
+
+    public void updateTodo(int position, String dname, String dDate, String dtime,
+                           String dreq_time, String dmemo) {
+
+        Calendar calendar = Calendar.getInstance();
+
+        String todayDate = simpleDateFormat.format(calendar.getTime());
+        String todayTime = simpleDateFormat2.format(calendar.getTime());
+
+        String sql = "SELECT * FROM todo WHERE (date = '" + todayDate + "' AND time >= '" + todayTime + "') OR date > '" + todayDate + "' ORDER BY date, time";
+
+        ArrayList<Todo> items = selectTodo(sql);
+        Todo item = items.get(position);
+
+        float dpriority = (float) toDoFragment.getRemainTime(dDate, dtime) / Float.parseFloat(dreq_time);
+
+        String update_sql = "UPDATE todo SET name = " + "'" + dname + "', date = " + "'" + dDate +
+                "', time = " + "'" + dtime + "', req_time = " + "'" + dreq_time + "', memo = " + "'" + dmemo +
+                "', priority = " + dpriority + " WHERE _id = " + item.get_id();
+
+        database.execSQL(update_sql);
+
+        items = selectTodo(sql);
+        TodoAdapter adapter = TodayFragment.adapter;
+        adapter.setItems(items);
+        TodayFragment.recyclerView.setAdapter(adapter);
+    }
+
+    public void deleteTodo(int position) {
+
+        Calendar calendar = Calendar.getInstance();
+
+        String todayDate = simpleDateFormat.format(calendar.getTime());
+        String todayTime = simpleDateFormat2.format(calendar.getTime());
+
+        String sql = "SELECT * FROM todo WHERE (date = '" + todayDate + "' AND time >= '" + todayTime + "') OR date > '" + todayDate + "' ORDER BY date, time";
+
+        ArrayList<Todo> items = selectTodo(sql);
+        Todo item = items.get(position);
+
+        String delete_sql = "DELETE FROM todo WHERE _id = " + item.get_id();
+        database.execSQL(delete_sql);
+
+        items = selectTodo(sql);
+        TodoAdapter adapter = TodayFragment.adapter;
+        adapter.setItems(items);
+        TodayFragment.recyclerView.setAdapter(adapter);
+    }
+
+    public void assignTodo() { //여유시간 배열 생성 및 할일 할당
+        LinkedHashMap<Integer, LinkedList<ArrayList<String>>> spareTimes = new LinkedHashMap<Integer, LinkedList<ArrayList<String>>>();
+        ArrayList<Schedule> schedules = new ArrayList<Schedule>();
+        Cursor cursor = database.rawQuery("SELECT _id, name, location, start_date, start_time, end_date, end_time, repeat, memo from schedule ORDER BY start_date, start_time", null);
+
+        cursor.moveToNext();
+        for (int i=1; i<cursor.getCount(); i++) {
+            int id = cursor.getInt(0);
+            String name = cursor.getString(1);
+            String location = cursor.getString(2);
+            String start_date = cursor.getString(3);
+            String start_time = cursor.getString(4);
+            String end_date = cursor.getString(5);
+            String end_time = cursor.getString(6);
+            int repeat = cursor.getInt(7);
+            String memo = cursor.getString(8);
+
+            Schedule schedule_item = new Schedule(id, name, location, start_date, start_time, end_date, end_time, repeat, memo);
+            schedules.add(schedule_item);
+
+            ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(start_date, end_time));
+            cursor.moveToNext();
+            int time;
+            if(spareTime.get(0) != cursor.getString(3)) {
+                spareTime.add("23");
+                time = (23 - Integer.parseInt(spareTime.get(1)))/1;
+                if(Integer.parseInt(cursor.getString(4)) > 8){
+                    if(!spareTimes.containsKey(time))
+                        spareTimes.put(time, null);
+                    spareTimes.get(time).add(spareTime);
+                    spareTime.clear();
+                    spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(3), "8", cursor.getString(4)));
+                    time = (Integer.parseInt(spareTime.get(2)) - Integer.parseInt(spareTime.get(1))) / 1;
+                }
+            } else{
+                spareTime.add(cursor.getString(4));
+                time = (Integer.parseInt(spareTime.get(2)) - Integer.parseInt(spareTime.get(1))) / 1;
+            }
+            if(!spareTimes.containsKey(time))
+                spareTimes.put(time, null);
+            spareTimes.get(time).add(spareTime);
+        }
+        cursor.close();
+
+        ArrayList<Todo> todos = new ArrayList<Todo>();
+        cursor = database.rawQuery("SELECT * from todo ORDER BY priority, date, time",null);
+
+        for (int i=0; i<cursor.getCount(); i++) {
+            cursor.moveToNext();
+
+            int id = cursor.getInt(0);
+            String name = cursor.getString(1);
+            String date = cursor.getString(2);
+            String time = cursor.getString(3);
+            String req_time = cursor.getString(4);
+            String memo = cursor.getString(5);
+            float priority = cursor.getFloat(6);
+
+            Todo todo_item = new Todo(id, name, date, time, req_time, memo, priority);
+            todos.add(todo_item);
+        }
+        cursor.close();
+
+        for(Todo it:todos){
+            boolean isAssigned = false;
+            int requireTime = Integer.parseInt(it.req_time), maxSpace = 0;
+            for(int key:spareTimes.keySet()){
+                if(maxSpace<key)
+                    maxSpace = key;
+            }
+            for(int i=requireTime; i<=maxSpace; i++){
+                if(spareTimes.containsKey(i) && !isAssigned){
+                    for(int j=0; j<spareTimes.get(i).size(); j++){
+                        String tdate = spareTimes.get(i).get(j).get(0);
+                        String ts_time = spareTimes.get(i).get(j).get(1);
+                        String te_time = spareTimes.get(i).get(j).get(2);
+                        String end_time = Integer.toString(Integer.parseInt(ts_time)+requireTime);
+                        if(Integer.parseInt(tdate) > Integer.parseInt(it.date))
+                            break;
+                        else if(Integer.parseInt(tdate) == Integer.parseInt(it.date)){
+                            if(Integer.parseInt(end_time) > Integer.parseInt(it.time))
+                                break;
+                        }
+                        Schedule schedule_item = new Schedule(it._id, it.name, "", tdate, ts_time, tdate, end_time, 0, "");
+                        int left = (Integer.parseInt(te_time) - Integer.parseInt(end_time))/1;
+                        spareTimes.get(i).remove(j);
+                        if(spareTimes.get(i).size() == 0)
+                            spareTimes.remove(i);
+                        if(left > 0){
+                            ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(tdate, end_time, te_time));
+                            if(!spareTimes.containsKey(left))
+                                spareTimes.put(left, null);
+                            spareTimes.get(left).add(spareTime);
+                            Collections.sort(spareTimes.get(left), new Comparator<ArrayList<String>>() {
+                                @Override
+                                public int compare(ArrayList<String> o1, ArrayList<String> o2) {
+                                    if(Integer.parseInt(o1.get(0)) > Integer.parseInt(o2.get(0)))
+                                        return 1;
+                                    else if(Integer.parseInt(o1.get(0)) > Integer.parseInt(o2.get(0))){
+                                        if(Integer.parseInt(o1.get(1)) > Integer.parseInt(o2.get(1)))
+                                            return 1;
+                                        else
+                                            return -1;
+                                    }
+                                    else
+                                        return -1;
+
+                                }
+                            });
+                        }
+                        isAssigned = true;
+                        break;
+                    }
+                }
+            }
+        }
+    }
 }

@@ -1,14 +1,10 @@
 package org.techtown.yogiplanner;
 
-import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
-import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -17,19 +13,16 @@ import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TimePicker;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.recyclerview.widget.RecyclerView;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Month;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-public class ScheduleDialog extends Dialog {
+public class ScheduleDialog2 extends Dialog {
     EditText name;
     EditText location;
     EditText start_date;
@@ -44,10 +37,7 @@ public class ScheduleDialog extends Dialog {
     RadioButton radioButton4;
 
     EditText memo;
-
-    ArrayList<Schedule> items;
-
-    int position;
+    int drepeat;
 
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
     SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
@@ -60,11 +50,8 @@ public class ScheduleDialog extends Dialog {
     Date date;
     Date time;
 
-    int drepeat;
-
-    public ScheduleDialog(@NonNull Context context) {
+    public ScheduleDialog2(@NonNull Context context) {
         super(context);
-        this.position = position;
     }
 
     @Override
@@ -86,12 +73,7 @@ public class ScheduleDialog extends Dialog {
 
         memo = findViewById(R.id.memo);
 
-        String sql = "SELECT * FROM schedule WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
-        items = ((MainActivity)MainActivity.mContext).selectSchedule(sql);
-        position = MonthFragment.mPosition;
-
-        //리사이클러뷰 클릭 위치를 가져와서 위치에 해당하는 아이템의 정보를 보여줌
-        Schedule item = items.get(position);
+        Schedule item = WeekFragment.week_items.get(WeekFragment.passedIndex);
 
         name.setText(item.getName());
         location.setText(item.getLocation());
@@ -122,7 +104,6 @@ public class ScheduleDialog extends Dialog {
 
         //시작 날짜
         calendar = Calendar.getInstance();
-
         try {
             date = simpleDateFormat.parse(item.getStart_date());
         } catch (ParseException e) {}
@@ -154,7 +135,6 @@ public class ScheduleDialog extends Dialog {
 
         //시작 시간
         calendar2 = Calendar.getInstance();
-
         try {
             time = simpleDateFormat2.parse(item.getStart_time());
         } catch (ParseException e) {}
@@ -179,6 +159,7 @@ public class ScheduleDialog extends Dialog {
         } catch (ParseException e) {}
 
         calendar3.setTime(time);
+
         end_time.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -219,7 +200,7 @@ public class ScheduleDialog extends Dialog {
 
                 String dmemo = memo.getText().toString();
 
-                ((MainActivity)MainActivity.mContext).updateSchedule(position, dname, dlocation,
+                ((MainActivity)MainActivity.mContext).updateSchedule2(WeekFragment.passedIndex, dname, dlocation,
                         dstart_date, dstart_time, dend_date, dend_time, drepeat, dmemo);
                 dismiss();
             }
@@ -229,7 +210,7 @@ public class ScheduleDialog extends Dialog {
         del_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((MainActivity)MainActivity.mContext).deleteSchedule(position);
+                ((MainActivity)MainActivity.mContext).deleteSchedule2(WeekFragment.passedIndex);
                 dismiss();
             }
         });
