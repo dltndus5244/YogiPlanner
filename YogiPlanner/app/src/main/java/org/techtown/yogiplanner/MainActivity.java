@@ -530,19 +530,19 @@ public class MainActivity extends AppCompatActivity {
             cursor.moveToNext();
             int time;
             if(spareTime.get(0) != cursor.getString(3)) { // 다음 스케줄의 날짜가 이전 스케줄의 날짜와 다르면 23시 까지만 여유시간으로 계산
-                spareTime.add("23");
-                time = (23 - Integer.parseInt(spareTime.get(1)))/1; // 여유시간 블럭의 시간을 계산하여 헤시맵의 키 값으로 사용
-                if(Integer.parseInt(cursor.getString(4)) > 8){ // 다음 일정의 시작시간이 8시 이후면 8시부터 다음 일정의 시작 전까지 여유시간으로 계산하도록 분기
+                spareTime.add("23:00");
+                time = (23 - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 여유시간 블럭의 시간을 계산하여 헤시맵의 키 값으로 사용
+                if(Integer.parseInt(cursor.getString(4).substring(0, 2)) > 8){ // 다음 일정의 시작시간이 8시 이후면 8시부터 다음 일정의 시작 전까지 여유시간으로 계산하도록 분기
                     if(!spareTimes.containsKey(time))
                         spareTimes.put(time, null); // 키값이 없으면 키값 생성
                     spareTimes.get(time).add(spareTime); // 키값에 여유시간 블럭 삽입
                     spareTime.clear();
-                    spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(3), "8", cursor.getString(4))); // 8시부터 다음 일정 시작 전까지 여유시간블럭 생성
-                    time = (Integer.parseInt(spareTime.get(2)) - Integer.parseInt(spareTime.get(1))) / 1; // 키 값 계산
+                    spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(3), "08:00", cursor.getString(4))); // 8시부터 다음 일정 시작 전까지 여유시간블럭 생성
+                    time = (Integer.parseInt(spareTime.get(2).substring(0, 2)) - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 키 값 계산
                 }
             } else{
                 spareTime.add(cursor.getString(4));
-                time = (Integer.parseInt(spareTime.get(2)) - Integer.parseInt(spareTime.get(1))) / 1; // 다음 스케줄이 이전 스케줄과 같은 날짜 일 때 여유시간
+                time = (Integer.parseInt(spareTime.get(2).substring(0, 2)) - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 다음 스케줄이 이전 스케줄과 같은 날짜 일 때 여유시간
             }
             if(!spareTimes.containsKey(time))
                 spareTimes.put(time, null);
@@ -558,7 +558,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // 할 일 불러오기
-        ArrayList<Todo> todos = new ArrayList<Todo>();
+        LinkedList<Todo> todos = new LinkedList<Todo>();
         cursor = database.rawQuery("SELECT * from todo ORDER BY priority, date, time",null);
 
         for (int i=0; i<cursor.getCount(); i++) {
@@ -573,61 +573,73 @@ public class MainActivity extends AppCompatActivity {
             float priority = cursor.getFloat(6);
 
             Todo todo_item = new Todo(id, name, date, time, req_time, memo, priority);
-            todos.add(todo_item); // 할 일들을 배열에 저장
+            todos.add(todo_item); // 할 일들을 우선순위 값 순서대로 배열에 저장
         }
         cursor.close();
 
         /*
-        할 일들을
+        할 일들을 여유시간에 할당
          */
-        for(Todo it:todos){
-            boolean isAssigned = false;
-            int requireTime = Integer.parseInt(it.req_time);
-            for(int i=requireTime; i<=maxSpace; i++){
-                if(spareTimes.containsKey(i) && !isAssigned){
-                    for(int j=0; j<spareTimes.get(i).size(); j++){
-                        String tdate = spareTimes.get(i).get(j).get(0);
-                        String ts_time = spareTimes.get(i).get(j).get(1);
-                        String te_time = spareTimes.get(i).get(j).get(2);
-                        String end_time = Integer.toString(Integer.parseInt(ts_time)+requireTime);
-                        if(Integer.parseInt(tdate) > Integer.parseInt(it.date))
-                            break;
-                        else if(Integer.parseInt(tdate) == Integer.parseInt(it.date)){
-                            if(Integer.parseInt(end_time) > Integer.parseInt(it.time))
-                                break;
-                        }
-                        Schedule schedule_item = new Schedule(it._id, it.name, "", tdate, ts_time, tdate, end_time, 0, "");
-                        int left = (Integer.parseInt(te_time) - Integer.parseInt(end_time))/1;
-                        spareTimes.get(i).remove(j);
-                        if(spareTimes.get(i).size() == 0)
-                            spareTimes.remove(i);
-                        if(left > 0){
-                            ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(tdate, end_time, te_time));
-                            if(!spareTimes.containsKey(left))
-                                spareTimes.put(left, null);
-                            spareTimes.get(left).add(spareTime);
-                            Collections.sort(spareTimes.get(left), new Comparator<ArrayList<String>>() {
-                                @Override
-                                public int compare(ArrayList<String> o1, ArrayList<String> o2) {
-                                    if(Integer.parseInt(o1.get(0)) > Integer.parseInt(o2.get(0)))
-                                        return 1;
-                                    else if(Integer.parseInt(o1.get(0)) > Integer.parseInt(o2.get(0))){
-                                        if(Integer.parseInt(o1.get(1)) > Integer.parseInt(o2.get(1)))
-                                            return 1;
-                                        else
-                                            return -1;
-                                    }
-                                    else
-                                        return -1;
+        while(!todos.isEmpty()){
+            Todo it = todos.poll();
+            if(Integer.parseInt(it.req_time) > maxSpace){
+                todos.addFirst(new Todo(it._id, it.name, it.date, it.time, Integer.toString(Integer.parseInt(it.req_time)-maxSpace), it.memo, it.priority));
+                it.req_time = Integer.toString(maxSpace);
+            }
+            for(int i=Integer.parseInt(it.req_time); i<=maxSpace; i++){
+                if(spareTimes.containsKey(i)){
 
-                                }
-                            });
-                        }
-                        isAssigned = true;
-                        break;
-                    }
                 }
             }
         }
+//        for(Todo it:todos){
+//            boolean isAssigned = false;
+//            int requireTime = Integer.parseInt(it.req_time);
+//            for(int i=requireTime; i<=maxSpace; i++){
+//                if(spareTimes.containsKey(i) && !isAssigned){
+//                    for(int j=0; j<spareTimes.get(i).size(); j++){
+//                        String tdate = spareTimes.get(i).get(j).get(0);
+//                        String ts_time = spareTimes.get(i).get(j).get(1);
+//                        String te_time = spareTimes.get(i).get(j).get(2);
+//                        String end_time = Integer.toString(Integer.parseInt(ts_time)+requireTime);
+//                        if(Integer.parseInt(tdate) > Integer.parseInt(it.date))
+//                            break;
+//                        else if(Integer.parseInt(tdate) == Integer.parseInt(it.date)){
+//                            if(Integer.parseInt(end_time) > Integer.parseInt(it.time))
+//                                break;
+//                        }
+//                        Schedule schedule_item = new Schedule(it._id, it.name, "", tdate, ts_time, tdate, end_time, 0, "");
+//                        int left = (Integer.parseInt(te_time) - Integer.parseInt(end_time))/1;
+//                        spareTimes.get(i).remove(j);
+//                        if(spareTimes.get(i).size() == 0)
+//                            spareTimes.remove(i);
+//                        if(left > 0){
+//                            ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(tdate, end_time, te_time));
+//                            if(!spareTimes.containsKey(left))
+//                                spareTimes.put(left, null);
+//                            spareTimes.get(left).add(spareTime);
+//                            Collections.sort(spareTimes.get(left), new Comparator<ArrayList<String>>() {
+//                                @Override
+//                                public int compare(ArrayList<String> o1, ArrayList<String> o2) {
+//                                    if(Integer.parseInt(o1.get(0)) > Integer.parseInt(o2.get(0)))
+//                                        return 1;
+//                                    else if(Integer.parseInt(o1.get(0)) > Integer.parseInt(o2.get(0))){
+//                                        if(Integer.parseInt(o1.get(1)) > Integer.parseInt(o2.get(1)))
+//                                            return 1;
+//                                        else
+//                                            return -1;
+//                                    }
+//                                    else
+//                                        return -1;
+//
+//                                }
+//                            });
+//                        }
+//                        isAssigned = true;
+//                        break;
+//                    }
+//                }
+//            }
+//        }
     }
 }
