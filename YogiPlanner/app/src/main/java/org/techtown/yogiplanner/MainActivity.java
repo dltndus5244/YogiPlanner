@@ -494,7 +494,7 @@ public class MainActivity extends AppCompatActivity {
         TodayFragment.recyclerView.setAdapter(adapter);
     }
 
-    public void assignTodo() { //여유시간 배열 생성 및 할일 할당
+    public void assignTodo() throws ParseException { //여유시간 배열 생성 및 할일 할당
         LinkedHashMap<Integer, LinkedList<ArrayList<String>>> spareTimes = new LinkedHashMap<Integer, LinkedList<ArrayList<String>>>();
         ArrayList<Schedule> schedules = new ArrayList<Schedule>();
         Cursor cursor = database.rawQuery("SELECT _id, name, location, start_date, start_time, end_date, end_time, repeat, memo from schedule ORDER BY start_date, start_time", null);
@@ -608,7 +608,7 @@ public class MainActivity extends AppCompatActivity {
 //                            if(Integer.parseInt(end_time) > Integer.parseInt(it.time))
 //                                break;
 //                        }
-//                        Schedule schedule_item = new Schedule(it._id, it.name, "", tdate, ts_time, tdate, end_time, 0, "");
+//                        Schedule schedule_item = new Schedule(it._id, it.name, "", tdate, ts_time, tdate, end_time, 0, it.memo);
 //                        int left = (Integer.parseInt(te_time) - Integer.parseInt(end_time))/1;
 //                        spareTimes.get(i).remove(j);
 //                        if(spareTimes.get(i).size() == 0)
