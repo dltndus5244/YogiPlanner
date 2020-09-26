@@ -1,0 +1,57 @@
+2020.09.27 update(이지현)
+
+-----------------------------<아직 안한 것>---나 보라고 적음------------------------------
+- 삭제 추가해야 함(연관된일정모두삭제/이일정만삭제/이일정이후모두삭제)
+    연관된일정모두삭제/이 일정이후 모두 삭제가 renew 0->1되는 경우
+    삭제는 화면도 따로 만들어야 해용....
+    방법은 schedule에 있는 _id와 ori_id를 이용할겁니다
+    연관된일정모두삭제---> 해당 일정의 ori_id와 ori_id가 같거나 _id가 같은 일정 다 삭제
+    이일정만삭제---> 해당 일정만 삭제
+    이일정이후모두삭제---> 해당 일정의 ori_id와 ori_id가 같으면서, 시작일이 같거나 큰 일정들을 삭제
+- 월 넘어갈 때 '해당 일' 없으면 그 월의 '마지막 일'로 일이 바뀌어버리는 문제 수정
+- update의 경우 하나도 체크 안해봄
+- 버젼은 2020.9.15. 20:40 전에 올라온 버젼.....수정 많이 해야겠지,,,
+- updateRepeatDate 쓸지 안쓸지 모르겠음 근데 고칠거임
+- 1. 그리고 지금 버젼 좀.... 너무 쓸데없이 다 체크하는 느낌이 있음.... 첨 입력받을 때 해당 id만 받아오고
+     싶다 할 수 있을것같은데 다시 고치기...음.......
+- 2. 아님 아예 매개변수 없애고 통째로 싹 체크할수도 있음... 이게날수도
+-------------------------------------------------------------------------------------
+
+제가 고친건 다 ★을 달아놨어요(스케줄 관련 함수에 ori_id 몇개 빼고..) 검색할 때 참고!
+
+<MainActivity>
+- ☆★☆★처음 실행할 때 onCreate 맨 마지막에
+    database.execSQL("ALTER TABLE schedule ADD COLUMN ori_id integer"); //반복할 일정의 처음 id를 저장할 속성 추가 ★
+    추가하고 실행해주셔야 합니당. 근데 이거 실행 전에 ori_id 다른 함수에도 추가해두어야 함,,,
+    아니면
+    /*database.execSQL("DROP TABLE schedule");
+            database.execSQL("DROP TABLE todo");
+            database.execSQL("DROP TABLE repeat");*/
+    이걸 주석 떼고 해버리고 다시 테이블 만들면 편합니닷
+
+- import java.util.GregorianCalendar; //★ 추가
+- schedule Table에 ori_id 속성 추가
+    : 디폴트값 0
+- createRepeatTable() { // Repeat 테이블 생성★
+- insertScheduleRecord2 // ★repeat용 스케줄 추가 함수2 추가, 다른점은 마지막 매개변수 int ori_id 추가한겁니당
+- insertTodoRecord에 할일 업뎃되면 반복 다 업데이트 체크 해주는걸 추가했습니당. 밑에것↓도 옮길까 생각 중
+- insertRepeatRecord(int repeat_type, String start_date, String end_date, int renew) { //반복일정 추가 함수 - AddScheduleFragment 에서 사용★
+    : _id는 쿼리로 들어감/repeat_type 매일(2131296485).매주(2131296486).매월(2131296487) 중 어떤건지/시작일,종료일->마지막 반복 날짜로업데이트됨/renew 계속 업데이트 하는지
+        renew 안되는 경우: 삭제(추후추가)에서 이 일정 이후로 모두 삭제 했을 때
+- executeRepeatQuery() { //repeat 테이블 조회 함수(확인용) - AddScheduleFragment ★
+- ArrayList<Repeat> selectRepeat(String sql) {   //★
+- updateRepeatDate(int ori_id, String dstart_date, String dend_date) { //★ 삭제할가능성큼 -------------
+- repeatSchedule(int repeat_type) {     //★ 반복에 체크될 경우 스케줄 테이블에 넣어줍니당. - AddScheduleFragment 에서 사용
+                                             넣어주는 기간은 마지막 마감일까지(마감일 업데이트 되면 체크해줘야함) - AddToDoFragment에서 사용하겠죵?
+                                             ※근데 월반복에서 치명적인 오류가 있음 만약 다음달에 해당 일이 없으면(ex>31일) 마지막 일(ex>30일)로 바뀌는데 다음달도 계속 그 일로 유지함,,,
+                                               이거 고쳐줘야 해요
+
+<AddScheduleFragment>
+- 추가 버튼 클릭 이벤트 -> 데이터 삽입 부분에
+    if(_repeat ==  2131296485 || _repeat == 2131296486 || _repeat == 2131296487){   //반복할경우 repeat table에 data 넣어주는 역할 ★
+        _repeat 값 그냥 테이블에서 긁어옴,,,^^ 수정가능하면 수정하기...
+
+<Repeat.java> 클래스 추가
+
+<Schedule.java>
+- ori_id 추가
