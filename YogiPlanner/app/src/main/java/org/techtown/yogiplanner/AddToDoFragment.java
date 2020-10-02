@@ -92,6 +92,8 @@ public class AddToDoFragment extends Fragment {
                 ((MainActivity)getActivity()).insertTodoRecord(_name, _date, _time, _reqTime, _memo, _priority);
                 clearText();
 
+                ((MainActivity)getActivity()).assignTodo();
+
             }
         });
 

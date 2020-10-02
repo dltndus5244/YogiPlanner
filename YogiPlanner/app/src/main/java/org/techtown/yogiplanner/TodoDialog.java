@@ -129,6 +129,8 @@ public class TodoDialog extends Dialog {
                 ((MainActivity)MainActivity.mContext).updateTodo(position, dname,
                         dDate, dtime, dreq_time, dmemo);
                 dismiss();
+
+                ((MainActivity)MainActivity.mContext).assignTodo();
             }
         });
 
