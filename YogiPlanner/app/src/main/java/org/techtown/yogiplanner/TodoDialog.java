@@ -141,7 +141,7 @@ public class TodoDialog extends Dialog {
             public void onClick(View v) {
                 ((MainActivity)MainActivity.mContext).deleteTodo(position);
                 dismiss();
-                
+
                 ((MainActivity)MainActivity.mContext).assignTodo();
             }
         });

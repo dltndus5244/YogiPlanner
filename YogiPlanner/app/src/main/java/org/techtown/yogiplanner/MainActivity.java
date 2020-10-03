@@ -128,10 +128,11 @@ public class MainActivity extends AppCompatActivity {
 
         createScheduleTable();
         createTodoTable();
-
+        createTimeTable();
     }
 
     private void toggleFab() {
+        Log.d("MainActivity", "toggleFab() 호출");
         if(isFabOpen) {
             fab_main.setImageResource(R.drawable.add);
             fab_sub1.startAnimation(fab_close);
@@ -152,15 +153,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void replaceFragment(Fragment fragment) { //프래그먼트 교체 함수
+        Log.d("MainActivity", "replaceFragment() 호출");
         getSupportFragmentManager().beginTransaction().replace(R.id.container, fragment).commit();
     }
 
     private void createDatabase() { //데이터베이스 생성 : planner.db
+        Log.d("MainActivity", "createDatabase() 호출");
         database = openOrCreateDatabase("planner.db", MODE_PRIVATE, null);
         Log.d("MainActivity", "데이터베이스 생성");
     }
 
     private void createScheduleTable() { // Schedule 테이블 생성
+        Log.d("MainActivity", "createScheduleTable() 호출");
         String sql = "CREATE TABLE IF NOT EXISTS schedule ("
                 + "_id integer PRIMARY KEY autoincrement, "
                 + "name text, "
@@ -177,6 +181,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void createTodoTable() { //Todo 테이블 생성
+        Log.d("MainActivity", "createTodoTable() 호출");
         String sql = "CREATE TABLE IF NOT EXISTS todo ("
                 + "_id integer PRIMARY KEY autoincrement, "
                 + "name text, "
@@ -191,6 +196,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void createTimeTable() { // Time 테이블 생성
+        Log.d("MainActivity", "createTimeTable() 호출");
         String sql = "CREATE TABLE IF NOT EXISTS time ("
                 + "_id integer PRIMARY KEY autoincrement, "
                 + "name text, "
@@ -210,17 +216,21 @@ public class MainActivity extends AppCompatActivity {
 
     public void insertScheduleRecord(String name, String location, String start_date, String start_time,
                              String end_date, String end_time, int repeat, String memo) { //스케줄 추가 함수 - AddScheduleFragment 에서 사용
+        Log.d("MainActivity", "insertScheduleRecord() 호출");
 
         String sql = "INSERT INTO schedule"
                 + "(name, location, start_date, start_time, end_date, end_time, repeat, memo)"
                 + " VALUES ( "
                 + "'" + name + "' , '" + location + "', '" + start_date + "', '" + start_time
                 + "', '" +  end_date + "', '" + end_time + "', " + repeat + " , '" + memo + "')";
+
         database.execSQL(sql);
         Log.d("MainActivity", "schedule 데이터 추가");
     }
 
     public void insertTodoRecord(String name, String date, String time, String req_time, String memo, float priority) { //할 일 추가 함수 - AddTodoFragment 에서 사용
+        Log.d("MainActivity", "insertTodoRecord() 호출");
+
         String sql = "INSERT INTO todo"
                 + "(name, date, time, req_time, memo, priority)"
                 + " VALUES ( "
@@ -232,16 +242,20 @@ public class MainActivity extends AppCompatActivity {
 
     public void insertTimeRecord(String name, String location, String start_date, String start_time,
                                      String end_date, String end_time, int repeat, String memo, String type, int item_id) { //스케줄 추가 함수 - ?? 에서 사용
+        Log.d("MainActivity", "insertTimeRecord() 호출");
+
         String sql = "INSERT INTO time"
                 + "(name, location, start_date, start_time, end_date, end_time, repeat, memo, type, item_id)"
                 + " VALUES ( "
                 + "'" + name + "' , '" + location + "', '" + start_date + "', '" + start_time
                 + "', '" +  end_date + "', '" + end_time + "', " + repeat + ", '" + memo + "', '" + type + "', " + item_id + ")";
+
         database.execSQL(sql);
         Log.d("MainActivity", "time 데이터 추가");
     }
 
     public void executeScheduleQuery() { //schedule 테이블 조회 함수(확인용) - AddScheduleFragment
+        Log.d("MainActivity", "executeScheduleQuery() 호출");
         Cursor cursor = database.rawQuery("SELECT _id, name, location, start_date, start_time, " +
                 "end_date, end_time, repeat, memo from schedule ORDER BY start_date, start_time" , null);
 
@@ -257,13 +271,14 @@ public class MainActivity extends AppCompatActivity {
             String repeat = cursor.getString(7);
             String memo = cursor.getString(8);
 
-            Log.d("MainActivity", "레코드#" + i + " : " + id + ", " + name + ", " + location + ", " +
+            Log.d("MainActivity", "레코드#" + (i+1) + " : " + id + ", " + name + ", " + location + ", " +
                     start_date + ", " + start_time + ", " + end_date + ", " + end_time + ", " + repeat + ", " + memo);
         }
         cursor.close();
     }
 
     public void executeTodoQuery() { //todo 테이블 조회 함수(확인용) - AddToDoFragment
+        Log.d("MainActivity", "executeTodoQuery() 호출");
         String sql = "SELECT * from todo ORDER BY date, time";
         Cursor cursor = database.rawQuery(sql,null);
 
@@ -278,13 +293,14 @@ public class MainActivity extends AppCompatActivity {
             String memo = cursor.getString(5);
             float priority = cursor.getFloat(6);
 
-            Log.d("MainActivity", "레코드#" + i + " : " + id + ", " + name + ", " + date + ", " +
+            Log.d("MainActivity", "레코드#" + (i+1) + " : " + id + ", " + name + ", " + date + ", " +
                     time + ", " + req_time + ", " + memo + ", " + priority);
         }
         cursor.close();
     }
 
-    public void executeTimeQuery() { //time 테이블 조회 함수(확인용) - ???
+    public void executeTimeQuery() { //time 테이블 조회 함수(확인용) - assignTodo()
+        Log.d("MainActivity", "executeTimeQuery() 호출");
         Cursor cursor = database.rawQuery("SELECT * from time ORDER BY start_date, start_time" , null);
 
         for (int i=0; i<cursor.getCount(); i++) {
@@ -299,9 +315,10 @@ public class MainActivity extends AppCompatActivity {
             String repeat = cursor.getString(7);
             String memo = cursor.getString(8);
             String type = cursor.getString(9);
+            String item_id = cursor.getString(10);
 
-            Log.d("MainActivity", "레코드#" + i + " : " + id + ", " + name + ", " + location + ", " +
-                    start_date + ", " + start_time + ", " + end_date + ", " + end_time + ", " + repeat + ", " + memo + ", " + type);
+            Log.d("MainActivity", "레코드#" + (i+1) + " : " + id + ", " + name + ", " + location + ", " + start_date + ", " +
+                    start_time + ", " + end_date + ", " + end_time + ", " + repeat + ", " + memo + ", " + type + ", " + item_id);
         }
         cursor.close();
     }
@@ -311,6 +328,7 @@ public class MainActivity extends AppCompatActivity {
         사용 : MonthFragment, ScheduleDialog
      */
     public ArrayList<Schedule> selectSchedule(String sql) {
+        Log.d("MainActivity", "selectSchedule() 호출");
         ArrayList<Schedule> result = new ArrayList<Schedule>();
 
         try {
@@ -345,6 +363,7 @@ public class MainActivity extends AppCompatActivity {
     사용 : TodayFragment
  */
     public ArrayList<Todo> selectTodo(String sql) {
+        Log.d("MainActivity", "selectTodo() 호출");
         ArrayList<Todo> result = new ArrayList<Todo>();
 
         try {
@@ -376,6 +395,7 @@ public class MainActivity extends AppCompatActivity {
      */
     public void updateSchedule(int position, String dname, String dlocation, String dstart_date, String dstart_time,
                                String dend_date, String dend_time, int drepeat, String dmemo) {
+        Log.d("MainActivity", "updateSchedule() 호출");
 
         String sql = "SELECT * FROM schedule WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
 
@@ -398,6 +418,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void updateSchedule2(int position, String dname, String dlocation, String dstart_date, String dstart_time,
                                String dend_date, String dend_time, int drepeat, String dmemo) {
+        Log.d("MainActivity", "updateSchedule2() 호출");
 
         ArrayList<Schedule> items = WeekFragment.week_items;
         Schedule item = items.get(position);
@@ -415,6 +436,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void deleteSchedule(int position) { // schedule 데이터 삭제
+        Log.d("MainActivity", "deleteSchedule() 호출");
         String sql = "SELECT * FROM schedule WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
         ArrayList<Schedule> items = selectSchedule(sql);
         Schedule item = items.get(position);
@@ -433,6 +455,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void deleteSchedule2(int position) { // schedule 데이터 삭제
+        Log.d("MainActivity", "deleteSchedule2() 호출");
 
         ArrayList<Schedule> items = WeekFragment.week_items;
         Schedule item = items.get(position);
@@ -448,6 +471,7 @@ public class MainActivity extends AppCompatActivity {
 
     public void updateTodo(int position, String dname, String dDate, String dtime,
                            String dreq_time, String dmemo) {
+        Log.d("MainActivity", "updateTodo() 호출");
 
         Calendar calendar = Calendar.getInstance();
 
@@ -474,6 +498,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void deleteTodo(int position) {
+        Log.d("MainActivity", "deleteTodo() 호출");
 
         Calendar calendar = Calendar.getInstance();
 
@@ -495,28 +520,32 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void assignTodo() { //여유시간 배열 생성 및 할일 할당
+        Log.d("MainActivity", "assignTodo() 함수 호출");
+        database.execSQL("DELETE FROM time");
         SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
         LinkedHashMap<Integer, LinkedList<ArrayList<String>>> spareTimes = new LinkedHashMap<Integer, LinkedList<ArrayList<String>>>();
-        LinkedList<Schedule> schedules =new LinkedList<Schedule>();
         Date dToday = new Date(System.currentTimeMillis());
         String today = simpleDateFormat.format(dToday), now = simpleDateFormat2.format(dToday);
 
         // 일정 불러오기
+        LinkedList<Schedule> schedules =new LinkedList<Schedule>();
         LinkedList<TimeItem> timeItems = new LinkedList<TimeItem>();
         Cursor cursor = database.rawQuery("SELECT * from schedule " +
                                                 "WHERE (start_date = '"+ today+ "' AND start_time >= '" + now + "') " +
                                                 "OR start_date > '" + today + "' " +
                                                 "ORDER BY start_date, start_time", null);
-        Log.d("MainActivity", "schedule | No | name | location | start_date | start_time | end_date | end_time | repeat | memo | type");
         for(int i=0; i<cursor.getCount(); i++){
             cursor.moveToNext();
             TimeItem item = new TimeItem(cursor.getInt(0), cursor.getString(1), cursor.getString(2), cursor.getString(3),
                     cursor.getString(4), cursor.getString(5), cursor.getString(6), cursor.getInt(7), cursor.getString(8), "schedule");
-            timeItems.add(item); // 스케줄을 배열에 저장
+            timeItems.add(item);
+            Schedule schedule_item = new Schedule(cursor.getInt(0), cursor.getString(1), cursor.getString(2), cursor.getString(3),
+                    cursor.getString(4), cursor.getString(5), cursor.getString(6), cursor.getInt(7), cursor.getString(8));
+            schedules.add(schedule_item); // 스케줄을 배열에 저장
 
-            Log.d("MainActivity", "레코드#" + (i+1) + " : " + item._id + ", " + item.name + ", " + item.location + ", " +
-                    item.start_date + ", " + item.start_time + ", " + item.end_date + ", " + item.end_time + ", " + item.repeat + ", " + item.memo + ", " + item.type);
+            insertTimeRecord(item.name, item.location, item.start_date, item.start_time, item.end_date, item.end_time, item.repeat, item.memo, item.type, item._id);
         }
+        executeTimeQuery();
 
         // 할 일 불러오기
         LinkedList<Todo> todos = new LinkedList<Todo>();
