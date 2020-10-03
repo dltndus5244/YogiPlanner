@@ -11,7 +11,6 @@ public class TimeItem {
     int repeat;
     String memo;
     String type;
-    int item_id;
 
     public TimeItem(int _id, String name, String location, String start_date, String start_time, String end_date, String end_time,
                     int repeat, String memo, String type) {

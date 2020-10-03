@@ -222,6 +222,8 @@ public class ScheduleDialog extends Dialog {
                 ((MainActivity)MainActivity.mContext).updateSchedule(position, dname, dlocation,
                         dstart_date, dstart_time, dend_date, dend_time, drepeat, dmemo);
                 dismiss();
+
+                ((MainActivity)MainActivity.mContext).assignTodo();
             }
         });
 
@@ -232,6 +234,8 @@ public class ScheduleDialog extends Dialog {
             public void onClick(View v) {
                 ((MainActivity)MainActivity.mContext).deleteSchedule(position);
                 dismiss();
+
+                ((MainActivity)MainActivity.mContext).assignTodo();
             }
         });
     }
