@@ -2,6 +2,7 @@ package org.techtown.yogiplanner;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.view.TintableBackgroundView;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -197,7 +198,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void createTimeTable() { // Time 테이블 생성
         Log.d("MainActivity", "createTimeTable() 호출");
-        String sql = "CREATE TABLE IF NOT EXISTS time ("
+        database.execSQL("DROP TABLE IF EXISTS time");
+        String sql = "CREATE TABLE time ("
                 + "_id integer PRIMARY KEY autoincrement, "
                 + "name text, "
                 + "location text, "
@@ -529,7 +531,7 @@ public class MainActivity extends AppCompatActivity {
         Date dToday = new Date(System.currentTimeMillis());
         String today = simpleDateFormat.format(dToday), now = simpleDateFormat2.format(dToday);
 
-        // 일정 불러오기
+        // 일정을 불러오고 time테이블에 우선 할당
         Cursor cursor = database.rawQuery("SELECT * from schedule " +
                                                 "WHERE (start_date = '"+ today+ "' AND start_time >= '" + now + "') " +
                                                 "OR start_date > '" + today + "' " +
@@ -562,8 +564,14 @@ public class MainActivity extends AppCompatActivity {
         // 할 일들을 여유시간에 할당
         while(!todos.isEmpty()){
             Todo it = todos.poll();
+            // time에 먼저 할당된 일정들을 할 일의 마감 전까지의 일정만 불러와서 timeblocks 배열에 일정 사이의 여유시간을 저장
             cursor = database.rawQuery("SELECT * from time WHERE end_date < '" + it.date + "' OR (end_date = '" + it.date + "' AND end_time < '" + it.time + "') ORDER BY start_date, start_time",null);
             cursor.moveToNext();
+            // 첫 번째 일정과 현재 시간 사이의 여유시간 계산
+            if( (today.compareTo(cursor.getString(3)) == 0 && Integer.parseInt(now.substring(0, 2)) < Integer.parseInt(cursor.getString(4).substring(0, 2))) || today.compareTo(cursor.getString(3)) < 0){
+                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, now, cursor.getString(3), cursor.getString(4)));
+                timeBlocks.add(spareTime);
+            }
             int maxtime=0;
             for (int i=1; i<cursor.getCount(); i++) {
                 ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), cursor.getString(6))); // 이전 스케줄의 날짜, 끝시간을 여유시간 블럭에 저장.
@@ -598,11 +606,65 @@ public class MainActivity extends AppCompatActivity {
                 spareTimes.get(time).add(spareTime);
 */
             }
+            // 마지막 일정과 할 일의 마감시간 사이의 여유시간 계산
+            if( (it.date.compareTo(cursor.getString(3)) == 0 && Integer.parseInt(it.time.substring(0, 2)) > Integer.parseInt(cursor.getString(4).substring(0, 2))) || it.date.compareTo(cursor.getString(3)) > 0){
+                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), cursor.getString(6), it.date, it.time));
+                timeBlocks.add(spareTime);
+            }
             cursor.close();
+
+            // 여유시간들을 08:00~23:00 사이의 값으로 분할 및 여유시간이 0인 시간블럭 삭제
             for(int i=0; i<timeBlocks.size(); i++){
-                Log.d("MainActivity", "TimeBlock#" + (i+1) + " : " +
+                if(timeBlocks.get(i).get(0).compareTo(timeBlocks.get(i).get(2)) < 0){
+                    Date nextDay = null;
+                    try{
+                        nextDay = simpleDateFormat.parse(timeBlocks.get(i).get(0));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(nextDay);
+                    cal.add(Calendar.DATE, 1);
+
+                    ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(simpleDateFormat.format(cal.getTime()), "08:00", timeBlocks.get(i).get(2), timeBlocks.get(i).get(3)));
+                    timeBlocks.get(i).remove(2);
+                    timeBlocks.get(i).remove(2);
+                    timeBlocks.get(i).addAll(Arrays.asList(timeBlocks.get(i).get(0), "23:00"));
+                    timeBlocks.add(i+1, spareTime);
+                } else{
+                    if(timeBlocks.get(i).get(1).compareTo("08:00")<0){
+                        if(timeBlocks.get(i).get(3).compareTo("08:00")<0) {
+                            timeBlocks.remove(i);
+                            i--;
+                            continue;
+                        } else
+                            timeBlocks.get(i).get(1).replaceAll(timeBlocks.get(i).get(1), "08:00");
+                    } else if(timeBlocks.get(i).get(3).compareTo("23:00")>0) {
+                        if(timeBlocks.get(i).get(1).compareTo("23:00")>0) {
+                            timeBlocks.remove(i);
+                            i--;
+                            continue;
+                        } else
+                            timeBlocks.get(i).get(3).replaceAll(timeBlocks.get(i).get(3), "23:00");
+                    }
+                    if(timeBlocks.get(i).get(1).equals(timeBlocks.get(i).get(3))){
+                        timeBlocks.remove(i);
+                        i--;
+                        continue;
+                    }
+                }
+            }
+
+            // 각 여유시간의 크기 계산후 times배열에 저장 및 저장된 여유시간을 로그로 출력
+            for(int i=0; i<timeBlocks.size(); i++){
+                int start = Integer.parseInt(timeBlocks.get(i).get(1).substring(0, 2)), end = Integer.parseInt(timeBlocks.get(i).get(3).substring(0, 2));
+                if(Integer.parseInt(timeBlocks.get(i).get(1).substring(3, 5)) > 0)
+                    start++;
+                times.add(end - start);
+                Log.d("MainActivity", "TimeBlock #" + (i+1) + ": " +times.get(i) + "시간 " +
                         "[" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + timeBlocks.get(i).get(3) + "]");
             }
+            timeBlocks.clear();
         }
         /*
         스케줄 테이블의 값 불러오기, 시간 순서대로 불러오며 [이전 스케줄의 끝시간 ~ 다음 스케줄의 시작시간] 을 여유시간으로 계산.
