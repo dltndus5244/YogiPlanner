@@ -523,27 +523,21 @@ public class MainActivity extends AppCompatActivity {
         Log.d("MainActivity", "assignTodo() 함수 호출");
         database.execSQL("DELETE FROM time");
         SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+        LinkedList<ArrayList<String>> timeBlocks = new LinkedList<ArrayList<String>>();
+        LinkedList<Integer> times = new LinkedList<Integer>();
         LinkedHashMap<Integer, LinkedList<ArrayList<String>>> spareTimes = new LinkedHashMap<Integer, LinkedList<ArrayList<String>>>();
         Date dToday = new Date(System.currentTimeMillis());
         String today = simpleDateFormat.format(dToday), now = simpleDateFormat2.format(dToday);
 
         // 일정 불러오기
-        LinkedList<Schedule> schedules =new LinkedList<Schedule>();
-        LinkedList<TimeItem> timeItems = new LinkedList<TimeItem>();
         Cursor cursor = database.rawQuery("SELECT * from schedule " +
                                                 "WHERE (start_date = '"+ today+ "' AND start_time >= '" + now + "') " +
                                                 "OR start_date > '" + today + "' " +
                                                 "ORDER BY start_date, start_time", null);
         for(int i=0; i<cursor.getCount(); i++){
             cursor.moveToNext();
-            TimeItem item = new TimeItem(cursor.getInt(0), cursor.getString(1), cursor.getString(2), cursor.getString(3),
-                    cursor.getString(4), cursor.getString(5), cursor.getString(6), cursor.getInt(7), cursor.getString(8), "schedule");
-            timeItems.add(item);
-            Schedule schedule_item = new Schedule(cursor.getInt(0), cursor.getString(1), cursor.getString(2), cursor.getString(3),
-                    cursor.getString(4), cursor.getString(5), cursor.getString(6), cursor.getInt(7), cursor.getString(8));
-            schedules.add(schedule_item); // 스케줄을 배열에 저장
-
-            insertTimeRecord(item.name, item.location, item.start_date, item.start_time, item.end_date, item.end_time, item.repeat, item.memo, item.type, item._id);
+            insertTimeRecord(cursor.getString(1), cursor.getString(2), cursor.getString(3), cursor.getString(4), cursor.getString(5),
+                    cursor.getString(6), cursor.getInt(7), cursor.getString(8), "schedule", cursor.getInt(0));
         }
         executeTimeQuery();
 
@@ -565,45 +559,51 @@ public class MainActivity extends AppCompatActivity {
         }
         cursor.close();
 
-        /*
-        할 일들을 여유시간에 할당
-         */
-//        while(!todos.isEmpty()){
-//            Todo it = todos.poll();
-//            cursor = database.rawQuery("SELECT * from time WHERE start_date < '" + it.date + "' ORDER BY start_date, start_time",null);
-//            cursor.moveToNext();
-//            int maxtime=0;
-//            for (int i=1; i<cursor.getCount(); i++) {
-//                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), cursor.getString(6))); // 이전 스케줄의 날짜, 끝시간을 여유시간 블럭에 저장.
-//                cursor.moveToNext();
-//                int time;
-//                if(spareTime.get(0) != cursor.getString(3)) { // 다음 스케줄의 날짜가 이전 스케줄의 날짜와 다르면 23시 까지만 여유시간으로 계산
-//                    spareTime.add("23:00");
-//                    time = (23 - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 여유시간 블럭의 시간을 계산하여 헤시맵의 키 값으로 사용
-//                    if(maxtime < time)
-//                        maxtime = time;
-//                    if(Integer.parseInt(cursor.getString(4).substring(0, 2)) > 8){ // 다음 일정의 시작시간이 8시 이후면 8시부터 다음 일정의 시작 전까지 여유시간으로 계산하도록 분기
-//                        if(!spareTimes.containsKey(time))
-//                            spareTimes.put(time, null); // 키값이 없으면 키값 생성
-//                        spareTimes.get(time).add(spareTime); // 키값에 여유시간 블럭 삽입
-//                        spareTime.clear();
-//                        spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), "08:00", cursor.getString(4))); // 8시부터 다음 일정 시작 전까지 여유시간블럭 생성
-//                        time = (Integer.parseInt(spareTime.get(2).substring(0, 2)) - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 키 값 계산
-//                        if(maxtime < time)
-//                            maxtime = time;
-//                    }
-//                } else{
-//                    spareTime.add(cursor.getString(4));
-//                    time = (Integer.parseInt(spareTime.get(2).substring(0, 2)) - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 다음 스케줄이 이전 스케줄과 같은 날짜 일 때 여유시간
-//                    if(maxtime < time)
-//                        maxtime = time;
-//                }
-//                if(!spareTimes.containsKey(time))
-//                    spareTimes.put(time, null);
-//                spareTimes.get(time).add(spareTime);
-//            }
-//            cursor.close();
-//        }
+        // 할 일들을 여유시간에 할당
+        while(!todos.isEmpty()){
+            Todo it = todos.poll();
+            cursor = database.rawQuery("SELECT * from time WHERE end_date < '" + it.date + "' OR (end_date = '" + it.date + "' AND end_time < '" + it.time + "') ORDER BY start_date, start_time",null);
+            cursor.moveToNext();
+            int maxtime=0;
+            for (int i=1; i<cursor.getCount(); i++) {
+                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), cursor.getString(6))); // 이전 스케줄의 날짜, 끝시간을 여유시간 블럭에 저장.
+                cursor.moveToNext();
+                spareTime.addAll(Arrays.asList(cursor.getString(3), cursor.getString(4)));
+                timeBlocks.add(spareTime);
+/*
+                int time;
+                if(spareTime.get(0) != cursor.getString(3)) { // 다음 스케줄의 날짜가 이전 스케줄의 날짜와 다르면 23시 까지만 여유시간으로 계산
+                    spareTime.add("23:00");
+                    time = (23 - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 여유시간 블럭의 시간을 계산하여 헤시맵의 키 값으로 사용
+                    if(maxtime < time)
+                        maxtime = time;
+                    if(Integer.parseInt(cursor.getString(4).substring(0, 2)) > 8){ // 다음 일정의 시작시간이 8시 이후면 8시부터 다음 일정의 시작 전까지 여유시간으로 계산하도록 분기
+                        if(!spareTimes.containsKey(time))
+                            spareTimes.put(time, timeBlock); // 키값이 없으면 키값 생성
+                        spareTimes.get(time).add(spareTime); // 키값에 여유시간 블럭 삽입
+                        spareTime.clear();
+                        spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), "08:00", cursor.getString(4))); // 8시부터 다음 일정 시작 전까지 여유시간블럭 생성
+                        time = (Integer.parseInt(spareTime.get(2).substring(0, 2)) - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 키 값 계산
+                        if(maxtime < time)
+                            maxtime = time;
+                    }
+                } else{
+                    spareTime.add(cursor.getString(4));
+                    time = (Integer.parseInt(spareTime.get(2).substring(0, 2)) - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 다음 스케줄이 이전 스케줄과 같은 날짜 일 때 여유시간
+                    if(maxtime < time)
+                        maxtime = time;
+                }
+                if(!spareTimes.containsKey(time))
+                    spareTimes.put(time, timeBlock);
+                spareTimes.get(time).add(spareTime);
+*/
+            }
+            cursor.close();
+            for(int i=0; i<timeBlocks.size(); i++){
+                Log.d("MainActivity", "TimeBlock#" + (i+1) + " : " +
+                        "[" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + timeBlocks.get(i).get(3) + "]");
+            }
+        }
         /*
         스케줄 테이블의 값 불러오기, 시간 순서대로 불러오며 [이전 스케줄의 끝시간 ~ 다음 스케줄의 시작시간] 을 여유시간으로 계산.
         schedules 배열 리스트에 기존의 모든 스케줄 저장. 나중에 할당된 할일들과 합칠 예정.
