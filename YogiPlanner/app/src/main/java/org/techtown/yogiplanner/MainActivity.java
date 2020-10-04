@@ -303,8 +303,30 @@ public class MainActivity extends AppCompatActivity {
 
     public void executeTimeQuery() { //time 테이블 조회 함수(확인용) - assignTodo()
         Log.d("MainActivity", "executeTimeQuery() 호출");
-        Cursor cursor = database.rawQuery("SELECT * from time ORDER BY start_date, start_time" , null);
+        Cursor cursor = database.rawQuery("SELECT * from time WHERE type = 'schedule' ORDER BY start_date, start_time" , null);
 
+        Log.d("MainActivity", "--- schedule ---");
+        for (int i=0; i<cursor.getCount(); i++) {
+            cursor.moveToNext();
+            int id = cursor.getInt(0);
+            String name = cursor.getString(1);
+            String location = cursor.getString(2);
+            String start_date = cursor.getString(3);
+            String start_time = cursor.getString(4);
+            String end_date = cursor.getString(5);
+            String end_time = cursor.getString(6);
+            String repeat = cursor.getString(7);
+            String memo = cursor.getString(8);
+            String type = cursor.getString(9);
+            String item_id = cursor.getString(10);
+
+            Log.d("MainActivity", "레코드#" + (i+1) + " : " + id + ", " + name + ", " + location + ", " + start_date + ", " +
+                    start_time + ", " + end_date + ", " + end_time + ", " + repeat + ", " + memo + ", " + type + ", " + item_id);
+        }
+
+        cursor = database.rawQuery("SELECT * from time WHERE type = 'todo' ORDER BY start_date, start_time" , null);
+
+        Log.d("MainActivity", "--- todo ---");
         for (int i=0; i<cursor.getCount(); i++) {
             cursor.moveToNext();
             int id = cursor.getInt(0);
@@ -565,9 +587,11 @@ public class MainActivity extends AppCompatActivity {
         // 할 일들을 여유시간에 할당
         while(!todos.isEmpty()){
             Todo it = todos.poll();
+            boolean isAssigned = false;
             // time에 먼저 할당된 일정들을 할 일의 마감 전까지의 일정만 불러와서 timeblocks 배열에 일정 사이의 여유시간을 저장
             cursor = database.rawQuery("SELECT * from time WHERE end_date < '" + it.date + "' OR (end_date = '" + it.date + "' AND end_time < '" + it.time + "') ORDER BY start_date, start_time",null);
             cursor.moveToNext();
+
             // 첫 번째 일정과 현재 시간 사이의 여유시간 계산
             if( (today.compareTo(cursor.getString(3)) == 0 && Integer.parseInt(now.substring(0, 2)) < Integer.parseInt(cursor.getString(4).substring(0, 2))) || today.compareTo(cursor.getString(3)) < 0){
                 int start = Integer.parseInt(now.substring(0,2));
@@ -576,7 +600,6 @@ public class MainActivity extends AppCompatActivity {
                 ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, String.format("%02d", start) + ":00", cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
                 timeBlocks.add(spareTime);
             }
-            int maxtime=0;
             for (int i=1; i<cursor.getCount(); i++) {
                 int start = Integer.parseInt(cursor.getString(6).substring(0,2));
                 if(Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
@@ -585,34 +608,8 @@ public class MainActivity extends AppCompatActivity {
                 cursor.moveToNext();
                 spareTime.addAll(Arrays.asList(cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
                 timeBlocks.add(spareTime);
-/*
-                int time;
-                if(spareTime.get(0) != cursor.getString(3)) { // 다음 스케줄의 날짜가 이전 스케줄의 날짜와 다르면 23시 까지만 여유시간으로 계산
-                    spareTime.add("23:00");
-                    time = (23 - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 여유시간 블럭의 시간을 계산하여 헤시맵의 키 값으로 사용
-                    if(maxtime < time)
-                        maxtime = time;
-                    if(Integer.parseInt(cursor.getString(4).substring(0, 2)) > 8){ // 다음 일정의 시작시간이 8시 이후면 8시부터 다음 일정의 시작 전까지 여유시간으로 계산하도록 분기
-                        if(!spareTimes.containsKey(time))
-                            spareTimes.put(time, timeBlock); // 키값이 없으면 키값 생성
-                        spareTimes.get(time).add(spareTime); // 키값에 여유시간 블럭 삽입
-                        spareTime.clear();
-                        spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), "08:00", cursor.getString(4))); // 8시부터 다음 일정 시작 전까지 여유시간블럭 생성
-                        time = (Integer.parseInt(spareTime.get(2).substring(0, 2)) - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 키 값 계산
-                        if(maxtime < time)
-                            maxtime = time;
-                    }
-                } else{
-                    spareTime.add(cursor.getString(4));
-                    time = (Integer.parseInt(spareTime.get(2).substring(0, 2)) - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 다음 스케줄이 이전 스케줄과 같은 날짜 일 때 여유시간
-                    if(maxtime < time)
-                        maxtime = time;
-                }
-                if(!spareTimes.containsKey(time))
-                    spareTimes.put(time, timeBlock);
-                spareTimes.get(time).add(spareTime);
-*/
             }
+
             // 마지막 일정과 할 일의 마감시간 사이의 여유시간 계산
             if( (it.date.compareTo(cursor.getString(3)) == 0 && Integer.parseInt(it.time.substring(0, 2)) > Integer.parseInt(cursor.getString(4).substring(0, 2))) || it.date.compareTo(cursor.getString(3)) > 0){
                 int start = Integer.parseInt(cursor.getString(6).substring(0,2));
@@ -624,6 +621,7 @@ public class MainActivity extends AppCompatActivity {
             cursor.close();
 
             // 여유시간들을 08:00~23:00 사이의 값으로 분할 및 여유시간이 0인 시간블럭 삭제
+            int maxtime=0, mintime=24;
             for(int i=0; i<timeBlocks.size(); i++){
                 if(timeBlocks.get(i).get(0).compareTo(timeBlocks.get(i).get(2)) < 0){
                     Date nextDay = null;
@@ -667,156 +665,52 @@ public class MainActivity extends AppCompatActivity {
                         continue;
                     }
                 }
-            }
 
-            // 각 여유시간의 크기 계산후 times배열에 저장 및 저장된 여유시간을 로그로 출력
-            for(int i=0; i<timeBlocks.size(); i++){
                 int start = Integer.parseInt(timeBlocks.get(i).get(1).substring(0, 2)), end = Integer.parseInt(timeBlocks.get(i).get(3).substring(0, 2));
                 if(Integer.parseInt(timeBlocks.get(i).get(1).substring(3, 5)) > 0)
                     start++;
                 times.add(end - start);
+                if(maxtime < end - start)
+                    maxtime = end - start;
+
+                // 각 여유시간의 크기 계산후 times배열에 저장 및 저장된 여유시간을 로그로 출력
                 Log.d("MainActivity", "TimeBlock #" + (i+1) + ": " +times.get(i) + "시간 " +
                         "[" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + timeBlocks.get(i).get(3) + "]");
+
+                // 할 일의 소요시간과 여유시간이 같으면 해당 여유시간에 할 일 할당, 아니면 여유시간의 최소값과 최대값을 구하여 변수에 저장
+                if(Integer.parseInt(it.req_time) == end - start){
+                    Log.d("MainActivity", it.name + "을 " + (i+1) + "번 째 여유시간에 할당 >> [" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + timeBlocks.get(i).get(3) + "]");
+                    insertTimeRecord(it.name, "", timeBlocks.get(i).get(0), timeBlocks.get(i).get(1), timeBlocks.get(i).get(2), timeBlocks.get(i).get(3), 0, "", "todo", it._id);
+                    isAssigned = true;
+                    break;
+                } else if(Integer.parseInt(it.req_time) < end - start){
+                    if(mintime > end - start)
+                        mintime = end - start;
+                }
             }
+            if(isAssigned)
+                continue;
+
+            if(Integer.parseInt(it.req_time) > maxtime) {
+                int req_time = Integer.parseInt(it.req_time) - maxtime;
+                Todo todo_item = new Todo(it._id, it.name, it.date, it.time, Integer.toString(req_time), it.memo, it.priority);
+                todos.addFirst(todo_item);
+                it.setReq_time(Integer.toString(maxtime));
+                mintime = maxtime;
+            }
+            for(int i=0; i<timeBlocks.size(); i++){
+                if(times.get(i) == mintime) {
+                    int end = Integer.parseInt(timeBlocks.get(i).get(1).substring(0, 2)) + Integer.parseInt(it.req_time);
+                    Log.d("MainActivity", it.name + "을 " + (i+1) + "번 째 여유시간에 할당 >> [" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + String.format("%02d", end) + ":00" + "]");
+                    insertTimeRecord(it.name, "", timeBlocks.get(i).get(0), timeBlocks.get(i).get(1), timeBlocks.get(i).get(2), String.format("%02d", end) + ":00", 0, "", "todo", it._id);
+                    break;
+                }
+            }
+
+            Log.d("MainActivity", "--- TimeBlock의 개수: " + timeBlocks.size() + ", times의 개수: " + times.size() + " ---");
             timeBlocks.clear();
+            times.clear();
         }
-        /*
-        스케줄 테이블의 값 불러오기, 시간 순서대로 불러오며 [이전 스케줄의 끝시간 ~ 다음 스케줄의 시작시간] 을 여유시간으로 계산.
-        schedules 배열 리스트에 기존의 모든 스케줄 저장. 나중에 할당된 할일들과 합칠 예정.
-        여유시간 블럭은 ArrayList에 {"날짜", "시작시간", "종료시간"}으로 저장되며
-        각각의 블럭을 LikedList에서 시간 순서대로 저장.
-        LinkedHashMap에서 블럭이 가진 여유시간의 양을 Key값으로 각각의 블럭 LinkedList를 저장.
-        **
-        여유시간 = 일정이 할당되지 않은, 사용자가 해야 할 일이 없는 무료한 시간의 개념
-        여유시간 블럭 = 여유시간을 날짜, 시작시간, 끝시간의 값으로 나타낸 데이터
-        키 값 = 여유시간 블럭이 가진 여유시간의 크기
-        **
-         */
-//        cursor.moveToNext();
-//        for (int i=1; i<cursor.getCount(); i++) {
-//            int id = cursor.getInt(0);
-//            String name = cursor.getString(1);
-//            String location = cursor.getString(2);
-//            String start_date = cursor.getString(3);
-//            String start_time = cursor.getString(4);
-//            String end_date = cursor.getString(5);
-//            String end_time = cursor.getString(6);
-//            int repeat = cursor.getInt(7);
-//            String memo = cursor.getString(8);
-//
-//            Schedule schedule_item = new Schedule(id, name, location, start_date, start_time, end_date, end_time, repeat, memo);
-//            schedules.add(schedule_item); // 스케줄을 배열에 저장
-//
-//            ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(start_date, end_time)); // 이전 스케줄의 날짜, 끝시간을 여유시간 블럭에 저장.
-//            cursor.moveToNext();
-//            int time;
-//            if(spareTime.get(0) != cursor.getString(3)) { // 다음 스케줄의 날짜가 이전 스케줄의 날짜와 다르면 23시 까지만 여유시간으로 계산
-//                spareTime.add("23:00");
-//                time = (23 - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 여유시간 블럭의 시간을 계산하여 헤시맵의 키 값으로 사용
-//                if(Integer.parseInt(cursor.getString(4).substring(0, 2)) > 8){ // 다음 일정의 시작시간이 8시 이후면 8시부터 다음 일정의 시작 전까지 여유시간으로 계산하도록 분기
-//                    if(!spareTimes.containsKey(time))
-//                        spareTimes.put(time, null); // 키값이 없으면 키값 생성
-//                    spareTimes.get(time).add(spareTime); // 키값에 여유시간 블럭 삽입
-//                    spareTime.clear();
-//                    spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(3), "08:00", cursor.getString(4))); // 8시부터 다음 일정 시작 전까지 여유시간블럭 생성
-//                    time = (Integer.parseInt(spareTime.get(2).substring(0, 2)) - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 키 값 계산
-//                }
-//            } else{
-//                spareTime.add(cursor.getString(4));
-//                time = (Integer.parseInt(spareTime.get(2).substring(0, 2)) - Integer.parseInt(spareTime.get(1).substring(0, 2))); // 다음 스케줄이 이전 스케줄과 같은 날짜 일 때 여유시간
-//            }
-//            if(!spareTimes.containsKey(time))
-//                spareTimes.put(time, null);
-//            spareTimes.get(time).add(spareTime);
-//        }
-//        cursor.close();
-//
-//        // 여유시간이 가장 긴 블럭의 시간 저장.
-//        int maxSpace=0;
-//        for(int key:spareTimes.keySet()){
-//            if(maxSpace<key)
-//                maxSpace = key;
-//        }
-//
-//
-//        /*
-//        할 일들을 여유시간에 할당
-//         */
-//        while(!todos.isEmpty()){
-//            Todo it = todos.poll();
-//            if(Integer.parseInt(it.req_time) > maxSpace){
-//                todos.addFirst(new Todo(it._id, it.name, it.date, it.time, Integer.toString(Integer.parseInt(it.req_time)-maxSpace), it.memo, it.priority));
-//                it.req_time = Integer.toString(maxSpace);
-//            }
-//            for(int i=Integer.parseInt(it.req_time); i<=maxSpace; i++){
-//                if(spareTimes.containsKey(i)){
-//                    Date spare = null;
-//                    Date due = null;
-//                    try{
-//                        spare = DateFormat.parse(spareTimes.get(i).getFirst().get(0)+" "+spareTimes.get(i).getFirst().get(1));
-//                        due = DateFormat.parse(it.date+" "+it.time);
-//                    } catch (ParseException e) {
-//                        e.printStackTrace();
-//                    }
-//                    Calendar cal = Calendar.getInstance();
-//                    cal.setTime(spare);
-//
-//                    cal.add(Calendar.HOUR_OF_DAY, Integer.parseInt(it.req_time));
-//
-//                    int compare = spare.compareTo(due);
-//                    if(compare > 0)
-//                        continue;
-//                }
-//            }
-//        }
-//        for(Todo it:todos){
-//            boolean isAssigned = false;
-//            int requireTime = Integer.parseInt(it.req_time);
-//            for(int i=requireTime; i<=maxSpace; i++){
-//                if(spareTimes.containsKey(i) && !isAssigned){
-//                    for(int j=0; j<spareTimes.get(i).size(); j++){
-//                        String tdate = spareTimes.get(i).get(j).get(0);
-//                        String ts_time = spareTimes.get(i).get(j).get(1);
-//                        String te_time = spareTimes.get(i).get(j).get(2);
-//                        String end_time = Integer.toString(Integer.parseInt(ts_time)+requireTime);
-//                        if(Integer.parseInt(tdate) > Integer.parseInt(it.date))
-//                            break;
-//                        else if(Integer.parseInt(tdate) == Integer.parseInt(it.date)){
-//                            if(Integer.parseInt(end_time) > Integer.parseInt(it.time))
-//                                break;
-//                        }
-//                        Schedule schedule_item = new Schedule(it._id, it.name, "", tdate, ts_time, tdate, end_time, 0, it.memo);
-//                        int left = (Integer.parseInt(te_time) - Integer.parseInt(end_time))/1;
-//                        spareTimes.get(i).remove(j);
-//                        if(spareTimes.get(i).size() == 0)
-//                            spareTimes.remove(i);
-//                        if(left > 0){
-//                            ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(tdate, end_time, te_time));
-//                            if(!spareTimes.containsKey(left))
-//                                spareTimes.put(left, null);
-//                            spareTimes.get(left).add(spareTime);
-//                            Collections.sort(spareTimes.get(left), new Comparator<ArrayList<String>>() {
-//                                @Override
-//                                public int compare(ArrayList<String> o1, ArrayList<String> o2) {
-//                                    if(Integer.parseInt(o1.get(0)) > Integer.parseInt(o2.get(0)))
-//                                        return 1;
-//                                    else if(Integer.parseInt(o1.get(0)) > Integer.parseInt(o2.get(0))){
-//                                        if(Integer.parseInt(o1.get(1)) > Integer.parseInt(o2.get(1)))
-//                                            return 1;
-//                                        else
-//                                            return -1;
-//                                    }
-//                                    else
-//                                        return -1;
-//
-//                                }
-//                            });
-//                        }
-//                        isAssigned = true;
-//                        break;
-//                    }
-//                }
-//            }
-//        }
+        executeTimeQuery();
     }
 }
