@@ -560,6 +560,7 @@ public class MainActivity extends AppCompatActivity {
                     todo_item.time + ", " + todo_item.req_time + ", " + todo_item.memo + ", " + todo_item.priority);
         }
         cursor.close();
+        executeTodoQuery();
 
         // 할 일들을 여유시간에 할당
         while(!todos.isEmpty()){
@@ -569,14 +570,20 @@ public class MainActivity extends AppCompatActivity {
             cursor.moveToNext();
             // 첫 번째 일정과 현재 시간 사이의 여유시간 계산
             if( (today.compareTo(cursor.getString(3)) == 0 && Integer.parseInt(now.substring(0, 2)) < Integer.parseInt(cursor.getString(4).substring(0, 2))) || today.compareTo(cursor.getString(3)) < 0){
-                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, now, cursor.getString(3), cursor.getString(4)));
+                int start = Integer.parseInt(now.substring(0,2));
+                if(Integer.parseInt(now.substring(3, 5)) > 0)
+                    start++;
+                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, String.format("%02d", start) + ":00", cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
                 timeBlocks.add(spareTime);
             }
             int maxtime=0;
             for (int i=1; i<cursor.getCount(); i++) {
-                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), cursor.getString(6))); // 이전 스케줄의 날짜, 끝시간을 여유시간 블럭에 저장.
+                int start = Integer.parseInt(cursor.getString(6).substring(0,2));
+                if(Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
+                    start++;
+                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), String.format("%02d", start) + ":00")); // 이전 스케줄의 날짜, 끝시간을 여유시간 블럭에 저장.
                 cursor.moveToNext();
-                spareTime.addAll(Arrays.asList(cursor.getString(3), cursor.getString(4)));
+                spareTime.addAll(Arrays.asList(cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
                 timeBlocks.add(spareTime);
 /*
                 int time;
@@ -608,7 +615,10 @@ public class MainActivity extends AppCompatActivity {
             }
             // 마지막 일정과 할 일의 마감시간 사이의 여유시간 계산
             if( (it.date.compareTo(cursor.getString(3)) == 0 && Integer.parseInt(it.time.substring(0, 2)) > Integer.parseInt(cursor.getString(4).substring(0, 2))) || it.date.compareTo(cursor.getString(3)) > 0){
-                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), cursor.getString(6), it.date, it.time));
+                int start = Integer.parseInt(cursor.getString(6).substring(0,2));
+                if(Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
+                    start++;
+                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), String.format("%02d", start) + ":00", it.date, it.time.substring(0, 2) + ":00"));
                 timeBlocks.add(spareTime);
             }
             cursor.close();
@@ -631,23 +641,27 @@ public class MainActivity extends AppCompatActivity {
                     timeBlocks.get(i).remove(2);
                     timeBlocks.get(i).addAll(Arrays.asList(timeBlocks.get(i).get(0), "23:00"));
                     timeBlocks.add(i+1, spareTime);
-                } else{
+                } else {
                     if(timeBlocks.get(i).get(1).compareTo("08:00")<0){
                         if(timeBlocks.get(i).get(3).compareTo("08:00")<0) {
                             timeBlocks.remove(i);
                             i--;
                             continue;
-                        } else
-                            timeBlocks.get(i).get(1).replaceAll(timeBlocks.get(i).get(1), "08:00");
+                        } else {
+                            timeBlocks.get(i).remove(1);
+                            timeBlocks.get(i).add(1, "08:00");
+                        }
                     } else if(timeBlocks.get(i).get(3).compareTo("23:00")>0) {
                         if(timeBlocks.get(i).get(1).compareTo("23:00")>0) {
                             timeBlocks.remove(i);
                             i--;
                             continue;
-                        } else
-                            timeBlocks.get(i).get(3).replaceAll(timeBlocks.get(i).get(3), "23:00");
+                        } else {
+                            timeBlocks.get(i).remove(3);
+                            timeBlocks.get(i).add(3, "23:00");
+                        }
                     }
-                    if(timeBlocks.get(i).get(1).equals(timeBlocks.get(i).get(3))){
+                    if(timeBlocks.get(i).get(1).compareTo(timeBlocks.get(i).get(3)) >= 0){
                         timeBlocks.remove(i);
                         i--;
                         continue;
