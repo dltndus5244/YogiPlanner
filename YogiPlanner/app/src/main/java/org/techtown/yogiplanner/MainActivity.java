@@ -554,10 +554,7 @@ public class MainActivity extends AppCompatActivity {
         String today = simpleDateFormat.format(dToday), now = simpleDateFormat2.format(dToday);
 
         // 일정을 불러오고 time테이블에 우선 할당
-        Cursor cursor = database.rawQuery("SELECT * from schedule " +
-                                                "WHERE (start_date = '"+ today+ "' AND start_time >= '" + now + "') " +
-                                                "OR start_date > '" + today + "' " +
-                                                "ORDER BY start_date, start_time", null);
+        Cursor cursor = database.rawQuery("SELECT * from schedule ORDER BY start_date, start_time", null);
         for(int i=0; i<cursor.getCount(); i++){
             cursor.moveToNext();
             insertTimeRecord(cursor.getString(1), cursor.getString(2), cursor.getString(3), cursor.getString(4), cursor.getString(5),
@@ -582,14 +579,15 @@ public class MainActivity extends AppCompatActivity {
                     todo_item.time + ", " + todo_item.req_time + ", " + todo_item.memo + ", " + todo_item.priority);
         }
         cursor.close();
-        executeTodoQuery();
 
         // 할 일들을 여유시간에 할당
         while(!todos.isEmpty()){
             Todo it = todos.poll();
-            boolean isAssigned = false;
             // time에 먼저 할당된 일정들을 할 일의 마감 전까지의 일정만 불러와서 timeblocks 배열에 일정 사이의 여유시간을 저장
-            cursor = database.rawQuery("SELECT * from time WHERE end_date < '" + it.date + "' OR (end_date = '" + it.date + "' AND end_time < '" + it.time + "') ORDER BY start_date, start_time",null);
+            cursor = database.rawQuery("SELECT * from time " +
+                                            "WHERE (end_date < '" + it.date + "' OR (end_date = '" + it.date + "' AND end_time < '" + it.time + "')) " +
+                                            "AND ((start_date = '"+ today+ "' AND end_time >= '" + now + "') OR start_date > '" + today + "') " +
+                                            "ORDER BY start_date, start_time",null);
             cursor.moveToNext();
 
             // 첫 번째 일정과 현재 시간 사이의 여유시간 계산
@@ -600,6 +598,7 @@ public class MainActivity extends AppCompatActivity {
                 ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, String.format("%02d", start) + ":00", cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
                 timeBlocks.add(spareTime);
             }
+            // 일정들 사이의 여유시간 계산
             for (int i=1; i<cursor.getCount(); i++) {
                 int start = Integer.parseInt(cursor.getString(6).substring(0,2));
                 if(Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
@@ -609,9 +608,8 @@ public class MainActivity extends AppCompatActivity {
                 spareTime.addAll(Arrays.asList(cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
                 timeBlocks.add(spareTime);
             }
-
             // 마지막 일정과 할 일의 마감시간 사이의 여유시간 계산
-            if( (it.date.compareTo(cursor.getString(3)) == 0 && Integer.parseInt(it.time.substring(0, 2)) > Integer.parseInt(cursor.getString(4).substring(0, 2))) || it.date.compareTo(cursor.getString(3)) > 0){
+            if( (it.date.compareTo(cursor.getString(3)) == 0 && it.time.compareTo(cursor.getString(4)) > 0) || it.date.compareTo(cursor.getString(3)) > 0 ){
                 int start = Integer.parseInt(cursor.getString(6).substring(0,2));
                 if(Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
                     start++;
@@ -659,49 +657,45 @@ public class MainActivity extends AppCompatActivity {
                             timeBlocks.get(i).add(3, "23:00");
                         }
                     }
-                    if(timeBlocks.get(i).get(1).compareTo(timeBlocks.get(i).get(3)) >= 0){
-                        timeBlocks.remove(i);
-                        i--;
-                        continue;
-                    }
                 }
 
                 int start = Integer.parseInt(timeBlocks.get(i).get(1).substring(0, 2)), end = Integer.parseInt(timeBlocks.get(i).get(3).substring(0, 2));
                 if(Integer.parseInt(timeBlocks.get(i).get(1).substring(3, 5)) > 0)
                     start++;
+                if(end-start <= 0){
+                    timeBlocks.remove(i);
+                    i--;
+                    continue;
+                }
                 times.add(end - start);
+
+                // 여유시간의 최대 크기를 변수에 저장
                 if(maxtime < end - start)
                     maxtime = end - start;
+                // 여유시간의 최적 크기를 변수에 저장
+                // * 최적값 : 할일이 할당될 수 있을 만큼 큰 여유시간들 중에서 가장 작은 값, 요구시간보다는 큰 여유시간 값들 중 최소값
+                if(Integer.parseInt(it.req_time) <= end - start) {
+                    if (mintime > end - start)
+                        mintime = end - start;
+                }
 
                 // 각 여유시간의 크기 계산후 times배열에 저장 및 저장된 여유시간을 로그로 출력
                 Log.d("MainActivity", "TimeBlock #" + (i+1) + ": " +times.get(i) + "시간 " +
                         "[" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + timeBlocks.get(i).get(3) + "]");
-
-                // 할 일의 소요시간과 여유시간이 같으면 해당 여유시간에 할 일 할당, 아니면 여유시간의 최소값과 최대값을 구하여 변수에 저장
-                if(Integer.parseInt(it.req_time) == end - start){
-                    Log.d("MainActivity", it.name + "을 " + (i+1) + "번 째 여유시간에 할당 >> [" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + timeBlocks.get(i).get(3) + "]");
-                    insertTimeRecord(it.name, "", timeBlocks.get(i).get(0), timeBlocks.get(i).get(1), timeBlocks.get(i).get(2), timeBlocks.get(i).get(3), 0, "", "todo", it._id);
-                    isAssigned = true;
-                    break;
-                } else if(Integer.parseInt(it.req_time) < end - start){
-                    if(mintime > end - start)
-                        mintime = end - start;
-                }
             }
-            if(isAssigned)
-                continue;
 
             if(Integer.parseInt(it.req_time) > maxtime) {
                 int req_time = Integer.parseInt(it.req_time) - maxtime;
                 Todo todo_item = new Todo(it._id, it.name, it.date, it.time, Integer.toString(req_time), it.memo, it.priority);
                 todos.addFirst(todo_item);
+                Log.d("MainActivity", it.name + "(" + it.req_time + "시간)이 너무 커서 둘로 쪼개어 " + maxtime +"시간 만 할당하고, " + req_time + "은 다시 todo배열에 추가");
                 it.setReq_time(Integer.toString(maxtime));
                 mintime = maxtime;
             }
             for(int i=0; i<timeBlocks.size(); i++){
                 if(times.get(i) == mintime) {
                     int end = Integer.parseInt(timeBlocks.get(i).get(1).substring(0, 2)) + Integer.parseInt(it.req_time);
-                    Log.d("MainActivity", it.name + "을 " + (i+1) + "번 째 여유시간에 할당 >> [" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + String.format("%02d", end) + ":00" + "]");
+                    Log.d("MainActivity", it.name + "을 TimeBlock #" + (i+1) + "에 할당 >> [" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + String.format("%02d", end) + ":00" + "]");
                     insertTimeRecord(it.name, "", timeBlocks.get(i).get(0), timeBlocks.get(i).get(1), timeBlocks.get(i).get(2), String.format("%02d", end) + ":00", 0, "", "todo", it._id);
                     break;
                 }
