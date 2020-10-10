@@ -148,13 +148,7 @@ public class AddScheduleFragment extends Fragment {
                 ((MainActivity)getActivity()).insertScheduleRecord(_name, _location, _start_date, _start_time,
                         _end_date, _end_time, _repeat, _memo);
 
-<<<<<<< HEAD
                 ((MainActivity)getActivity()).assignTodo();
-=======
-
-                ((MainActivity)getActivity()).assignTodo();
-
->>>>>>> 601cc91cb57a18cea6ac3a9bb1a4229612ab2323
                 clearText();
             }
         });
