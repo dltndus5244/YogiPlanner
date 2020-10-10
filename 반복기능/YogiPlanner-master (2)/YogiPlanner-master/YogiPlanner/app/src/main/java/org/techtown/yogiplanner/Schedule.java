@@ -1,6 +1,6 @@
 package org.techtown.yogiplanner;
 
-public class TimeItem {
+public class Schedule {
     int _id;
     String name;
     String location;
@@ -10,17 +10,10 @@ public class TimeItem {
     String end_time;
     int repeat;
     String memo;
-    String type;
-<<<<<<< HEAD
-    int item_id;
+    int ori_id; //★
 
-    public TimeItem(int _id, String name, String location, String start_date, String start_time, String end_date, String end_time,
-                    int repeat, String memo, String type, int item_id) {
-=======
-
-    public TimeItem(int _id, String name, String location, String start_date, String start_time, String end_date, String end_time,
-                    int repeat, String memo, String type) {
->>>>>>> 601cc91cb57a18cea6ac3a9bb1a4229612ab2323
+    public Schedule(int _id, String name, String location, String start_date, String start_time, String end_date, String end_time,
+                    int repeat, String memo, int ori_id) {  //★
         this._id = _id;
         this.name = name;
         this.location = location;
@@ -30,11 +23,7 @@ public class TimeItem {
         this.end_time = end_time;
         this.repeat = repeat;
         this.memo = memo;
-        this.type = type;
-<<<<<<< HEAD
-        this.item_id = item_id;
-=======
->>>>>>> 601cc91cb57a18cea6ac3a9bb1a4229612ab2323
+        this.ori_id = ori_id;   //★
     }
 
     public int get_id() {
@@ -109,20 +98,11 @@ public class TimeItem {
         this.memo = memo;
     }
 
-    public String getType() { return type; }
+    public int getOri_id() {
+        return ori_id;
+    }   //★
 
-    public void setType(String type) {
-        this.type = type;
-    }
-<<<<<<< HEAD
-
-    public int getItem_id() {
-        return item_id;
-    }
-
-    public void setItem_id(int item_id) {
-        this.item_id = item_id;
-    }
-=======
->>>>>>> 601cc91cb57a18cea6ac3a9bb1a4229612ab2323
+    public void setOri_id(int ori_id) {
+        this.ori_id = ori_id;
+    }   //★
 }

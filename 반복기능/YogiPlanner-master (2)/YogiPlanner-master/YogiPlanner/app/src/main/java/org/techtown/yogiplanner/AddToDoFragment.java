@@ -17,6 +17,7 @@ import android.widget.EditText;
 import android.widget.TimePicker;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -65,7 +66,7 @@ public class AddToDoFragment extends Fragment {
         time.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int hour = calendar1.get(Calendar.HOUR_OF_DAY);
+                int hour = calendar1.get(Calendar.HOUR);
                 int minute = calendar1.get(Calendar.MINUTE);
 
                 TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), myTimePicker, hour, minute, false);
@@ -90,12 +91,7 @@ public class AddToDoFragment extends Fragment {
                 Log.d("Todo", "우선순위 : " + _priority);
 
                 ((MainActivity)getActivity()).insertTodoRecord(_name, _date, _time, _reqTime, _memo, _priority);
-
-                ((MainActivity)getActivity()).assignTodo();
                 clearText();
-
-                ((MainActivity)getActivity()).assignTodo();
-
             }
         });
 

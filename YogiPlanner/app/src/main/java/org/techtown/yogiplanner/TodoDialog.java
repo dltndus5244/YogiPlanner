@@ -128,6 +128,8 @@ public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 Todo
                 ((MainActivity)MainActivity.mContext).updateTodo(position, dname,
                         dDate, dtime, dreq_time, dmemo);
                 dismiss();
+
+                ((MainActivity)MainActivity.mContext).assignTodo();
             }
         });
 
@@ -138,6 +140,8 @@ public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 Todo
             public void onClick(View v) {
                 ((MainActivity)MainActivity.mContext).deleteTodo(position);
                 dismiss();
+
+                ((MainActivity)MainActivity.mContext).assignTodo();
             }
         });
     }

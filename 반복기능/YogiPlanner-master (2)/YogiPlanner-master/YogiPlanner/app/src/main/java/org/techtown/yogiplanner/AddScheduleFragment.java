@@ -8,6 +8,7 @@ import android.os.Bundle;
 import androidx.fragment.app.Fragment;
 
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +20,7 @@ import android.widget.RadioGroup;
 import android.widget.TimePicker;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -31,18 +33,16 @@ public class AddScheduleFragment extends Fragment {
     EditText end_time;
 
     RadioGroup rg;
-    RadioButton radio1;
+    RadioButton radio;
     RadioButton radio2;
     RadioButton radio3;
     RadioButton radio4;
-
-    int _repeat;
+    String _repeat;
 
     EditText memo;
 
     Calendar calendar;
     Calendar calendar1;
-    Calendar calendar2;
 
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
     SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
@@ -50,7 +50,7 @@ public class AddScheduleFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.fragment_add_schedule, container, false);
+        final ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.fragment_add_schedule, container, false);
 
         name = rootView.findViewById(R.id.name);
         location = rootView.findViewById(R.id.location);
@@ -62,11 +62,6 @@ public class AddScheduleFragment extends Fragment {
         end_time = rootView.findViewById(R.id.end_time);
 
         rg = rootView.findViewById(R.id.rg);
-        radio1 = rootView.findViewById(R.id.radioButton);
-        radio2 = rootView.findViewById(R.id.radioButton2);
-        radio3 = rootView.findViewById(R.id.radioButton3);
-        radio4 = rootView.findViewById(R.id.radioButton4);
-
         memo = rootView.findViewById(R.id.memo);
 
         // 날짜 선택 창
@@ -97,7 +92,7 @@ public class AddScheduleFragment extends Fragment {
         start_time.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int hour = calendar1.get(Calendar.HOUR_OF_DAY);
+                int hour = calendar1.get(Calendar.HOUR) - 1;
                 int minute = calendar1.get(Calendar.MINUTE);
 
                 TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), myTimePicker, hour, minute, false);
@@ -106,15 +101,14 @@ public class AddScheduleFragment extends Fragment {
             }
         });
 
-        calendar2 = Calendar.getInstance();
-        calendar2.add(Calendar.HOUR, 1);
-        end_time.setText(simpleDateFormat2.format(calendar2.getTime()));
+        calendar1.add(Calendar.HOUR, 1);
+        end_time.setText(simpleDateFormat2.format(calendar1.getTime()));
 
         end_time.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                int hour = calendar2.get(Calendar.HOUR_OF_DAY);
-                int minute = calendar2.get(Calendar.MINUTE);
+                int hour = calendar1.get(Calendar.HOUR);
+                int minute = calendar1.get(Calendar.MINUTE);
 
                 TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), myTimePicker2, hour, minute, false);
                 timePickerDialog.setTitle("종료 시간");
@@ -129,32 +123,26 @@ public class AddScheduleFragment extends Fragment {
             public void onClick(View v) {
                 String _name = name.getText().toString();
                 String _location = location.getText().toString();
-
                 String _start_date = start_date.getText().toString();
                 String _start_time = start_time.getText().toString();
-
                 String _end_date = end_date.getText().toString();
                 String _end_time = end_time.getText().toString();
-
-                if (radio1.isChecked()) _repeat = 1;
-                else if (radio2.isChecked()) _repeat = 2;
-                else if (radio3.isChecked()) _repeat = 3;
-                else if (radio4.isChecked()) _repeat = 4;
-                else _repeat = -1;
-
+                int _repeat = rg.getCheckedRadioButtonId();
                 String _memo = memo.getText().toString();
-
+                //int _ori_id = rootView.getId();    // ★
 
                 ((MainActivity)getActivity()).insertScheduleRecord(_name, _location, _start_date, _start_time,
                         _end_date, _end_time, _repeat, _memo);
 
-<<<<<<< HEAD
-                ((MainActivity)getActivity()).assignTodo();
-=======
+                if(_repeat ==  2131296485 || _repeat == 2131296486 || _repeat == 2131296487){   //반복할경우 repeat table에 data 넣어주는 역할 ★
+                    ((MainActivity)getActivity()).insertRepeatRecord(_repeat, _start_date, _end_date);//, 1);
+                    ((MainActivity)getActivity()).repeatSchedule(_repeat);
+                    /*Log.d("MainActivity", "---------------바뀐일정--------------");
+                    ((MainActivity)getActivity()).executeScheduleQuery(); //Schedule Table 내용 보기
+                    Log.d("MainActivity", "---------------바뀐리핏--------------");
+                    ((MainActivity)getActivity()).executeRepeatQuery(); //Repeat Table 내용 보기*/
+                }
 
-                ((MainActivity)getActivity()).assignTodo();
-
->>>>>>> 601cc91cb57a18cea6ac3a9bb1a4229612ab2323
                 clearText();
             }
         });
