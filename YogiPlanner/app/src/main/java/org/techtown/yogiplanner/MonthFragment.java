@@ -34,20 +34,25 @@ import java.util.Locale;
 
 public class MonthFragment extends Fragment {
     static ScheduleAdapter adapter;
-    private ScheduleDialog dialog;
-    static ArrayList<Schedule> items;
+    private ScheduleDialog schedule_dialog;
+    private TodoDialog3 todo_dialog;
+    static ArrayList<TimeItem> items;
     static RecyclerView recyclerView;
     static int mPosition;
 
+    int maxDay;
+    ArrayList<TimeItem> curMonthItems;
     TextView tvDate;
-    GridAdapter gridAdapter;
+    static GridAdapter gridAdapter;
     ArrayList<String> dayList;
     GridView gridView;
-    Calendar mCal;
+    static Calendar mCal;
     Date date;
 
     int curYear;
     int curMonth;
+
+    ArrayList<String> isTodoOwn = new ArrayList<>();
 
     static String click_date;
 
@@ -77,10 +82,6 @@ public class MonthFragment extends Fragment {
         mCal = Calendar.getInstance();
         mCal.set(curYear, curMonth, 1);
         dayNum = mCal.get(Calendar.DAY_OF_WEEK); //이번달 1일이 무슨 요일인지 판단 (1~7:일~월)
-
-        //이번달 1일 요일의 앞을 공백으로 채움
-        for (int i=1; i<dayNum; i++)
-            dayList.add("");
 
         setCalendarDate(mCal.get(Calendar.MONTH)+1);
 
@@ -117,8 +118,8 @@ public class MonthFragment extends Fragment {
                 recyclerView.setAdapter(adapter);
 
                 //클릭한 날짜에 맞는 스케줄을 가져와서 리사이클러뷰에 보여줌
-                String sql = "SELECT * FROM schedule WHERE start_date = " + "'" + click_date + "'" + " ORDER BY start_date, start_time";
-                items = ((MainActivity)getActivity()).selectSchedule(sql);
+                String sql = "SELECT * FROM time WHERE start_date = " + "'" + click_date + "'" + " ORDER BY start_date, start_time";
+                items = ((MainActivity)getActivity()).selectTime(sql);
                 adapter.setItems(items);
 
                 //리사이클러뷰의 아이템을 클릭했을 경우 다이얼로그창을 띄워 상세 정보 보여줌
@@ -126,23 +127,58 @@ public class MonthFragment extends Fragment {
                         @Override
                         public void onItemClick(ScheduleAdapter.ViewHolder holder, View view, int position) {
                             mPosition = position;
-                            dialog = new ScheduleDialog(getContext());
-                            dialog.show();
+                            TimeItem item = items.get(position);
+
+                            if (item.getType().equals("schedule")) {
+                                schedule_dialog = new ScheduleDialog(getContext());
+                                schedule_dialog.show();
+                            }
+
+                            else if (item.getType().equals("todo")) {
+                                todo_dialog = new TodoDialog3(getContext());
+                                todo_dialog.show();
+                            }
                         }
                     });
                 }
         });
 
+
         return rootView;
     }
 
-    private void setCalendarDate(int month) { //날짜를 채워주는 함수
+    public void setCalendarDate(int month) { //날짜를 채워주는 함수
+        isTodoOwn.clear();
+        dayList.clear();
         mCal.set(Calendar.MONTH, month - 1);
+
+        for (int i=1; i<dayNum; i++)
+            dayList.add("");
 
         for (int i = 0; i < mCal.getActualMaximum(Calendar.DAY_OF_MONTH); i++) {
             dayList.add("" + (i + 1));
         }
+        maxDay = mCal.getActualMaximum(Calendar.DAY_OF_MONTH);
+        String first = "'"+mCal.get(Calendar.YEAR)+"/"+addZero(mCal.get(Calendar.MONTH)+1)+"/01'";
+        String last = "'"+mCal.get(Calendar.YEAR)+"/"+addZero(mCal.get(Calendar.MONTH)+1)+"/"+maxDay+"'";
 
+        String sql = "SELECT * FROM time WHERE start_date BETWEEN " + first + "AND " + last;
+        curMonthItems = ((MainActivity)getActivity()).selectTime(sql);
+
+        if (curMonthItems.size() > 0) {
+            for (int i = 0; i < curMonthItems.size(); i++) {
+                if (curMonthItems.get(i).getType().equals("todo")) {
+                    String[] date = curMonthItems.get(i).getStart_date().split("/");
+                    if (isTodoOwn.contains(date[2]) == false)
+                        isTodoOwn.add(date[2]);
+                }
+            }
+        }
+
+        Log.d("MonthFragment", "-----");
+        for (int i=0; i<isTodoOwn.size(); i++) {
+            Log.d("MonthFragment", isTodoOwn.get(i)+"");
+        }
     }
 
     public void preCalendar() { //이전 달 달력 셋팅 함수
@@ -162,11 +198,9 @@ public class MonthFragment extends Fragment {
         mCal.set(curYear, curMonth, 1);
         dayNum = mCal.get(Calendar.DAY_OF_WEEK);
 
-        for (int i=1; i<dayNum; i++)
-            dayList.add("");
-
         setCalendarDate(mCal.get(Calendar.MONTH)+1);
         gridAdapter.notifyDataSetChanged();
+
     }
 
     public void nextCalendar() { //다음 달 달력 셋팅 함수
@@ -186,9 +220,6 @@ public class MonthFragment extends Fragment {
         mCal.set(curYear, curMonth, 1);
         dayNum = mCal.get(Calendar.DAY_OF_WEEK);
 
-        for (int i=1; i<dayNum; i++)
-            dayList.add("");
-
         setCalendarDate(mCal.get(Calendar.MONTH)+1);
         gridAdapter.notifyDataSetChanged();
     }
@@ -196,7 +227,7 @@ public class MonthFragment extends Fragment {
     /*
     그리드뷰의 아이템을 관리해주는 그리드어댑터
      */
-    private class GridAdapter extends BaseAdapter {
+    public class GridAdapter extends BaseAdapter {
         private final List<String> list;
         private final LayoutInflater inflater;
 
@@ -229,6 +260,7 @@ public class MonthFragment extends Fragment {
                 holder = new ViewHolder();
 
                 holder.tvItemGridView = convertView.findViewById(R.id.tv_item_gridview);
+                holder.imageView = convertView.findViewById(R.id.imageView);
                 holder.itemLinear = convertView.findViewById(R.id.itemLinear);
 
                 convertView.setTag(holder);
@@ -245,6 +277,9 @@ public class MonthFragment extends Fragment {
                         return false;
                     }
                 });
+
+                holder.imageView.setImageResource(0);
+
             }
 
             holder.tvItemGridView.setText("" + getItem(position)); //그리드뷰에 날짜 표시해줌
@@ -271,12 +306,10 @@ public class MonthFragment extends Fragment {
                 });
             }
 
-            /*
-            추가해야 할 것
-            1. 아이템이 있으면 별표 표시 또는 색깔로든..표시해주기
-            2. 첫 화면이 오늘날짜 리사이클러뷰 보여주도록?
-            3. 반복체크 돼 있으면 주마다,,달마다,, 넣어주기
-             */
+            //할 일이 있는 날짜면 별 표시
+            if (isTodoOwn.contains(getItem(position))) {
+                holder.imageView.setImageResource(R.drawable.star);
+            }
 
             return convertView;
         }
@@ -284,6 +317,7 @@ public class MonthFragment extends Fragment {
 
     private class ViewHolder {
         TextView tvItemGridView;
+        ImageView imageView;
         LinearLayout itemLinear;
     }
 

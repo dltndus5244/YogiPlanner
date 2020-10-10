@@ -6,10 +6,15 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="15dp"
+        android:layout_height="15dp" />
+
     <TextView
         android:id="@+id/tv_item_gridview"
         android:layout_width="50dp"
-        android:layout_height="50dp"
+        android:layout_height="35dp"
         android:gravity="center|center_horizontal"
         android:text="날짜"
         android:textColor="@color/button_text"

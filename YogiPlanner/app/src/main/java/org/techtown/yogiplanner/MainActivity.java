@@ -26,11 +26,16 @@ import java.time.Month;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
     MonthFragment monthFragment;
@@ -108,8 +113,7 @@ public class MainActivity extends AppCompatActivity {
                 toggleFab();
                 replaceFragment(scheduleFragment);
                 fab_main.hide();
-//                fab_sub1.hide();
-//                fab_sub2.hide();
+
             }
         });
 
@@ -119,8 +123,6 @@ public class MainActivity extends AppCompatActivity {
                 toggleFab();
                 replaceFragment(toDoFragment);
                 fab_main.hide();
-//                fab_sub1.hide();
-//                fab_sub2.hide();
             }
         });
 
@@ -128,6 +130,10 @@ public class MainActivity extends AppCompatActivity {
 
         createScheduleTable();
         createTodoTable();
+        createRepeatTable();
+        createTimeTable();
+
+        assignTodo();
 
     }
 
@@ -155,12 +161,15 @@ public class MainActivity extends AppCompatActivity {
         getSupportFragmentManager().beginTransaction().replace(R.id.container, fragment).commit();
     }
 
+    /*
+    데이터베이스, 테이블 생성(schedule, Todo, repeat, Time)
+     */
     private void createDatabase() { //데이터베이스 생성 : planner.db
         database = openOrCreateDatabase("planner.db", MODE_PRIVATE, null);
         Log.d("MainActivity", "데이터베이스 생성");
     }
 
-    private void createScheduleTable() { // Schedule 테이블 생성
+    private void createScheduleTable() {
         String sql = "CREATE TABLE IF NOT EXISTS schedule ("
                 + "_id integer PRIMARY KEY autoincrement, "
                 + "name text, "
@@ -170,13 +179,14 @@ public class MainActivity extends AppCompatActivity {
                 + "end_date text, "
                 + "end_time text, "
                 + "repeat text, "
-                + "memo text)";
+                + "memo text, "
+                + "ori_id integer)";
 
         database.execSQL(sql);
         Log.d("MainActivity", "schedule 테이블 생성");
     }
 
-    private void createTodoTable() { //Todo 테이블 생성
+    private void createTodoTable() {
         String sql = "CREATE TABLE IF NOT EXISTS todo ("
                 + "_id integer PRIMARY KEY autoincrement, "
                 + "name text, "
@@ -190,8 +200,43 @@ public class MainActivity extends AppCompatActivity {
         Log.d("MainActivity", "todo 테이블 생성");
     }
 
+    private void createTimeTable() {
+        Log.d("MainActivity", "createTimeTable() 호출");
+        database.execSQL("DROP TABLE IF EXISTS time");
+        String sql = "CREATE TABLE time ("
+                + "_id integer PRIMARY KEY autoincrement, "
+                + "name text, "
+                + "location text, "
+                + "start_date text, "
+                + "start_time text, "
+                + "end_date text, "
+                + "end_time text, "
+                + "repeat text, "
+                + "memo text, "
+                + "type text, "
+                + "item_id integer)";
+
+        database.execSQL(sql);
+        Log.d("MainActivity", "time 테이블 생성");
+    }
+
+    private void createRepeatTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS repeat ("
+                + "_id integer PRIMARY KEY autoincrement, "
+                + "repeat_type integer, "  // 매일/매주/매월
+                + "start_date text, "
+                + "end_date text, "
+                + "renew integer default 1 check(renew=1 or renew=0))"; //1이면 계속 o, 0이면 더 이상 갱신x (이 이후로 모두 삭제 썼을 경우)
+
+        database.execSQL(sql);
+        Log.d("MainActivity", "repeat 테이블 생성");
+    }
+
+    /*
+    insert 함수(schedule, Todo, Time)
+     */
     public void insertScheduleRecord(String name, String location, String start_date, String start_time,
-                             String end_date, String end_time, int repeat, String memo) { //스케줄 추가 함수 - AddScheduleFragment 에서 사용
+                             String end_date, String end_time, int repeat, String memo) {
         Log.d("MainActivity", "insertRecord 실행됨");
 
         String sql = "INSERT INTO schedule"
@@ -202,7 +247,7 @@ public class MainActivity extends AppCompatActivity {
         database.execSQL(sql);
     }
 
-    public void insertTodoRecord(String name, String date, String time, String req_time, String memo, float priority) { //할 일 추가 함수 - AddTodoFragment 에서 사용
+    public void insertTodoRecord(String name, String date, String time, String req_time, String memo, float priority) {
         String sql = "INSERT INTO todo"
                 + "(name, date, time, req_time, memo, priority)"
                 + " VALUES ( "
@@ -210,9 +255,27 @@ public class MainActivity extends AppCompatActivity {
 
         database.execSQL(sql);
         Log.d("MainActivity", "todo 데이터 추가");
+
     }
 
-    public void executeScheduleQuery() { //schedule 테이블 조회 함수(확인용) - AddScheduleFragment
+    public void insertTimeRecord(String name, String location, String start_date, String start_time,
+                                 String end_date, String end_time, int repeat, String memo, String type, int item_id) {
+        Log.d("MainActivity", "insertTimeRecord() 호출");
+
+        String sql = "INSERT INTO time"
+                + "(name, location, start_date, start_time, end_date, end_time, repeat, memo, type, item_id)"
+                + " VALUES ( "
+                + "'" + name + "' , '" + location + "', '" + start_date + "', '" + start_time
+                + "', '" +  end_date + "', '" + end_time + "', " + repeat + ", '" + memo + "', '" + type + "', " + item_id + ")";
+
+        database.execSQL(sql);
+        Log.d("MainActivity", "time 데이터 추가");
+    }
+
+    /*
+    테이블 조회 함수(schedule, Todo, Time)
+     */
+    public void executeScheduleQuery() {
         Cursor cursor = database.rawQuery("SELECT _id, name, location, start_date, start_time, " +
                 "end_date, end_time, repeat, memo from schedule ORDER BY start_date, start_time" , null);
 
@@ -234,7 +297,7 @@ public class MainActivity extends AppCompatActivity {
         cursor.close();
     }
 
-    public void executeTodoQuery() { //todo 테이블 조회 함수(확인용) - AddToDoFragment
+    public void executeTodoQuery() {
         String sql = "SELECT * from todo ORDER BY date, time";
         Cursor cursor = database.rawQuery(sql,null);
 
@@ -255,9 +318,55 @@ public class MainActivity extends AppCompatActivity {
         cursor.close();
     }
 
-    /* 쿼리 수행 결과에 따라 Schedule 테이블의 데이터를 배열에 넣어줌
-        매개변수 : String sql
-        사용 : MonthFragment, ScheduleDialog
+    public void executeTimeQuery() {
+        Log.d("MainActivity", "executeTimeQuery() 호출");
+        Cursor cursor = database.rawQuery("SELECT * from time WHERE type = 'schedule' ORDER BY start_date, start_time" , null);
+
+        Log.d("MainActivity", "--- schedule ---");
+        for (int i=0; i<cursor.getCount(); i++) {
+            cursor.moveToNext();
+            int id = cursor.getInt(0);
+            String name = cursor.getString(1);
+            String location = cursor.getString(2);
+            String start_date = cursor.getString(3);
+            String start_time = cursor.getString(4);
+            String end_date = cursor.getString(5);
+            String end_time = cursor.getString(6);
+            String repeat = cursor.getString(7);
+            String memo = cursor.getString(8);
+            String type = cursor.getString(9);
+            String item_id = cursor.getString(10);
+
+            Log.d("MainActivity", "레코드#" + (i+1) + " : " + id + ", " + name + ", " + location + ", " + start_date + ", " +
+                    start_time + ", " + end_date + ", " + end_time + ", " + repeat + ", " + memo + ", " + type + ", " + item_id);
+        }
+
+        cursor = database.rawQuery("SELECT * from time WHERE type = 'todo' ORDER BY start_date, start_time" , null);
+
+        Log.d("MainActivity", "--- todo ---");
+        for (int i=0; i<cursor.getCount(); i++) {
+            cursor.moveToNext();
+            int id = cursor.getInt(0);
+            String name = cursor.getString(1);
+            String location = cursor.getString(2);
+            String start_date = cursor.getString(3);
+            String start_time = cursor.getString(4);
+            String end_date = cursor.getString(5);
+            String end_time = cursor.getString(6);
+            String repeat = cursor.getString(7);
+            String memo = cursor.getString(8);
+            String type = cursor.getString(9);
+            String item_id = cursor.getString(10);
+
+            Log.d("MainActivity", "레코드#" + (i+1) + " : " + id + ", " + name + ", " + location + ", " + start_date + ", " +
+                    start_time + ", " + end_date + ", " + end_time + ", " + repeat + ", " + memo + ", " + type + ", " + item_id);
+        }
+        cursor.close();
+    }
+
+    /*
+    select 함수(schedule, Todo, Time)
+    쿼리를 매개변수로 받아 select 하여 데이터를 ArrayList에 저장
      */
     public ArrayList<Schedule> selectSchedule(String sql) {
         ArrayList<Schedule> result = new ArrayList<Schedule>();
@@ -286,13 +395,9 @@ public class MainActivity extends AppCompatActivity {
             e.printStackTrace();
         }
 
-        return result; //쿼리 수행 결과 저장 배열
+        return result;
     }
 
-    /* 쿼리 수행 결과에 따라 Todo 테이블의 데이터를 배열에 넣어줌
-    매개변수 : String sql
-    사용 : TodayFragment
- */
     public ArrayList<Todo> selectTodo(String sql) {
         ArrayList<Todo> result = new ArrayList<Todo>();
 
@@ -319,84 +424,87 @@ public class MainActivity extends AppCompatActivity {
         return result;
     }
 
-    /* Schedule 데이터 수정 함수
-        매개변수로 수정할 데이터의 position을 받아서 해당 위치에 맞는 데이터를 수정해줌
-        사용 : ScheduleDialog
+    public ArrayList<TimeItem> selectTime(String sql) {
+        ArrayList<TimeItem> result = new ArrayList<TimeItem>();
+
+        try {
+            Cursor cursor = database.rawQuery(sql, null);
+            for (int i=0; i<cursor.getCount(); i++) {
+                cursor.moveToNext();
+
+                int id = cursor.getInt(0);
+                String name = cursor.getString(1);
+                String location = cursor.getString(2);
+                String start_date = cursor.getString(3);
+                String start_time = cursor.getString(4);
+                String end_date = cursor.getString(5);
+                String end_time = cursor.getString(6);
+                int repeat = cursor.getInt(7);
+                String memo = cursor.getString(8);
+                String type = cursor.getString(9);
+                int item_id = cursor.getInt(10);
+
+                TimeItem time_item = new TimeItem(id, name, location, start_date, start_time,
+                        end_date, end_time, repeat, memo, type, item_id);
+                result.add(time_item);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
+    /*
+    update 함수(schedule, Todo)
      */
     public void updateSchedule(int position, String dname, String dlocation, String dstart_date, String dstart_time,
-                               String dend_date, String dend_time, int drepeat, String dmemo) {
+                               String dend_date, String dend_time, int drepeat, String dmemo) { //Month-ScheduleDialog에서 사용
 
-        String sql = "SELECT * FROM schedule WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
-
-        ArrayList<Schedule> items = selectSchedule(sql);
-        Schedule item = items.get(position);
+        String sql = "SELECT * FROM time WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
+        ArrayList<TimeItem> timeItems = selectTime(sql);
+        TimeItem timeItem = timeItems.get(position);
+        int item_id = timeItem.getItem_id();
 
         String update_sql = "UPDATE schedule SET name = " + "'" + dname + "', location = " + "'" + dlocation + "', start_date = " + "'" + dstart_date +
                 "', start_time = " + "'" + dstart_time + "', end_date = " + "'" + dend_date +
                 "', end_time = " + "'" + dend_time + "', repeat = " + drepeat + ", memo = " + "'" + dmemo +
-                "' WHERE _id = " + item.get_id();
+                "' WHERE _id = " + item_id;
 
-        Log.d("MainActivity", "아이디 : " + item.get_id());
         database.execSQL(update_sql);
 
-        items = selectSchedule(sql);
-        ScheduleAdapter adapter = MonthFragment.adapter;
-        adapter.setItems(items);
-        MonthFragment.recyclerView.setAdapter(adapter);
+        assignTodo();
+        timeItems = selectTime(sql);
+        MonthFragment.adapter.setItems(timeItems);
+        MonthFragment.recyclerView.setAdapter(MonthFragment.adapter);
+
+        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH)+1);
+        MonthFragment.gridAdapter.notifyDataSetChanged();
     }
 
     public void updateSchedule2(int position, String dname, String dlocation, String dstart_date, String dstart_time,
-                               String dend_date, String dend_time, int drepeat, String dmemo) {
+                               String dend_date, String dend_time, int drepeat, String dmemo) { //Week-ScheduleDialog2에서 사용
 
-        ArrayList<Schedule> items = WeekFragment.week_items;
-        Schedule item = items.get(position);
+        ArrayList<TimeItem> timeItems = WeekFragment.week_items;
+        TimeItem timeItem = timeItems.get(position);
+        int item_id = timeItem.getItem_id();
 
         String update_sql = "UPDATE schedule SET name = " + "'" + dname + "', location = " + "'" + dlocation + "', start_date = " + "'" + dstart_date +
                 "', start_time = " + "'" + dstart_time + "', end_date = " + "'" + dend_date +
                 "', end_time = " + "'" + dend_time + "', repeat = " + drepeat + ", memo = " + "'" + dmemo +
-                "' WHERE _id = " + item.get_id();
+                "' WHERE _id = " + item_id;
 
         database.execSQL(update_sql);
 
+        assignTodo();
+        weekFragment.setTimeList();
         weekFragment.findWeekSchedule();
-        WeekFragment.adapter.setItems(items);
-        WeekFragment.adapter.notifyDataSetChanged();
-    }
-
-    public void deleteSchedule(int position) { // schedule 데이터 삭제
-        String sql = "SELECT * FROM schedule WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
-        ArrayList<Schedule> items = selectSchedule(sql);
-        Schedule item = items.get(position);
-
-        Log.d("MainActivity", "아이디 : " + item.get_id());
-
-//        String delete_sql = "DELETE FROM schedule WHERE name = " + "'" + item.getName() + "'" + "AND start_date = " + "'" + item.getStart_date() + "'";
-        String delete_sql = "DELETE FROM schedule WHERE _id = " + item.get_id();
-        database.execSQL(delete_sql);
-
-        items = selectSchedule(sql);
-        ScheduleAdapter adapter = MonthFragment.adapter;
-        adapter.setItems(items);
-        MonthFragment.recyclerView.setAdapter(adapter);
-
-    }
-
-    public void deleteSchedule2(int position) { // schedule 데이터 삭제
-
-        ArrayList<Schedule> items = WeekFragment.week_items;
-        Schedule item = items.get(position);
-
-        String delete_sql = "DELETE FROM schedule WHERE _id = " + item.get_id();
-        database.execSQL(delete_sql);
-
-        WeekFragment.timeList.set(WeekFragment.passedPosition, "");
-        weekFragment.findWeekSchedule();
-        WeekFragment.adapter.setItems(items);
+        WeekFragment.adapter.setItems(timeItems);
         WeekFragment.adapter.notifyDataSetChanged();
     }
 
     public void updateTodo(int position, String dname, String dDate, String dtime,
-                           String dreq_time, String dmemo) {
+                           String dreq_time, String dmemo) { //Today-TodoDialog에서 사용
 
         Calendar calendar = Calendar.getInstance();
 
@@ -416,13 +524,99 @@ public class MainActivity extends AppCompatActivity {
 
         database.execSQL(update_sql);
 
+        assignTodo();
         items = selectTodo(sql);
         TodoAdapter adapter = TodayFragment.adapter;
         adapter.setItems(items);
         TodayFragment.recyclerView.setAdapter(adapter);
     }
 
-    public void deleteTodo(int position) {
+    public void updateTodo2(int position, String dname, String dDate, String dtime,
+                            String dreq_time, String dmemo) { //Week-TodoDialog2에서 사용
+
+        ArrayList<TimeItem> timeItems = WeekFragment.week_items;
+        TimeItem timeItem = timeItems.get(position);
+        int item_id = timeItem.getItem_id();
+
+        float dpriority = (float) toDoFragment.getRemainTime(dDate, dtime) / Float.parseFloat(dreq_time);
+
+        String update_sql = "UPDATE todo SET name = " + "'" + dname + "', date = " + "'" + dDate +
+                "', time = " + "'" + dtime + "', req_time = " + "'" + dreq_time + "', memo = " + "'" + dmemo +
+                "', priority = " + dpriority + " WHERE _id = " + item_id;
+
+        database.execSQL(update_sql);
+
+        assignTodo();
+        weekFragment.setTimeList();
+        weekFragment.findWeekSchedule();
+        WeekFragment.adapter.setItems(timeItems);
+        WeekFragment.adapter.notifyDataSetChanged();
+    }
+
+    public void updateTodo3(int position, String dname, String dDate, String dtime,
+                            String dreq_time, String dmemo) { //Month-TodoDialog3에서 사용
+
+        String sql = "SELECT * FROM time WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
+        ArrayList<TimeItem> timeItems = selectTime(sql);
+        TimeItem timeItem = timeItems.get(position);
+        int item_id = timeItem.getItem_id();
+
+        float dpriority = (float) toDoFragment.getRemainTime(dDate, dtime) / Float.parseFloat(dreq_time);
+
+        String update_sql = "UPDATE todo SET name = " + "'" + dname + "', date = " + "'" + dDate +
+                "', time = " + "'" + dtime + "', req_time = " + "'" + dreq_time + "', memo = " + "'" + dmemo +
+                "', priority = " + dpriority + " WHERE _id = " + item_id;
+
+        database.execSQL(update_sql);
+
+        assignTodo();
+        timeItems = selectTime(sql);
+        MonthFragment.adapter.setItems(timeItems);
+        MonthFragment.recyclerView.setAdapter(MonthFragment.adapter);
+
+        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH)+1);
+        MonthFragment.gridAdapter.notifyDataSetChanged();
+    }
+
+    /*
+    delete 함수(schedule, Todo)
+     */
+    public void deleteSchedule(int position) { //ScheduleDialog
+
+        String sql = "SELECT * FROM time WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
+        ArrayList<TimeItem> timeItems = selectTime(sql);
+        TimeItem timeItem = timeItems.get(position);
+        int item_id = timeItem.getItem_id();
+
+        String delete_sql = "DELETE FROM schedule WHERE _id = " + item_id;
+        database.execSQL(delete_sql);
+
+        assignTodo();
+        timeItems = selectTime(sql);
+        MonthFragment.adapter.setItems(timeItems);
+        MonthFragment.recyclerView.setAdapter(MonthFragment.adapter);
+
+        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH)+1);
+        MonthFragment.gridAdapter.notifyDataSetChanged();
+    }
+
+    public void deleteSchedule2(int position) { //ScheduleDialog3
+
+        ArrayList<TimeItem> timeItems = WeekFragment.week_items;
+        TimeItem timeItem = timeItems.get(position);
+        int item_id = timeItem.getItem_id();
+
+        String delete_sql = "DELETE FROM schedule WHERE _id = " + item_id;
+        database.execSQL(delete_sql);
+
+        assignTodo();
+        weekFragment.setTimeList();
+        weekFragment.findWeekSchedule();
+        WeekFragment.adapter.setItems(timeItems);
+        WeekFragment.adapter.notifyDataSetChanged();
+    }
+
+    public void deleteTodo(int position) { //TodoDialog
 
         Calendar calendar = Calendar.getInstance();
 
@@ -437,127 +631,213 @@ public class MainActivity extends AppCompatActivity {
         String delete_sql = "DELETE FROM todo WHERE _id = " + item.get_id();
         database.execSQL(delete_sql);
 
+        assignTodo();
         items = selectTodo(sql);
         TodoAdapter adapter = TodayFragment.adapter;
         adapter.setItems(items);
         TodayFragment.recyclerView.setAdapter(adapter);
     }
 
-    public void assignTodo() { //여유시간 배열 생성 및 할일 할당
+    public void deleteTodo2(int position) { //TodoDialog2
+
+        ArrayList<TimeItem> timeItems = WeekFragment.week_items;
+        TimeItem timeItem = timeItems.get(position);
+        int item_id = timeItem.getItem_id();
+
+        String delete_sql = "DELETE FROM todo WHERE _id = " + item_id;
+        database.execSQL(delete_sql);
+
+        assignTodo();
+        weekFragment.setTimeList();
+        weekFragment.findWeekSchedule();
+        WeekFragment.adapter.setItems(timeItems);
+        WeekFragment.adapter.notifyDataSetChanged();
+    }
+
+    public void deleteTodo3(int position) { //TodoDialog3
+
+        String sql = "SELECT * FROM time WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
+        ArrayList<TimeItem> timeItems = selectTime(sql);
+        TimeItem timeItem = timeItems.get(position);
+        int item_id = timeItem.getItem_id();
+
+        String delete_sql = "DELETE FROM todo WHERE _id = " + item_id;
+        database.execSQL(delete_sql);
+
+        assignTodo();
+        timeItems = selectTime(sql);
+        MonthFragment.adapter.setItems(timeItems);
+        MonthFragment.recyclerView.setAdapter(MonthFragment.adapter);
+
+        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH)+1);
+        MonthFragment.gridAdapter.notifyDataSetChanged();
+    }
+
+    /*
+    여유시간 배열 생성 및 할일 할당 함수
+     */
+    public void assignTodo() {
+        Log.d("MainActivity", "assignTodo() 함수 호출");
+        database.execSQL("DELETE FROM time");
+        SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+        LinkedList<ArrayList<String>> timeBlocks = new LinkedList<ArrayList<String>>();
+        LinkedList<Integer> times = new LinkedList<Integer>();
         LinkedHashMap<Integer, LinkedList<ArrayList<String>>> spareTimes = new LinkedHashMap<Integer, LinkedList<ArrayList<String>>>();
-        ArrayList<Schedule> schedules = new ArrayList<Schedule>();
-        Cursor cursor = database.rawQuery("SELECT _id, name, location, start_date, start_time, end_date, end_time, repeat, memo from schedule ORDER BY start_date, start_time", null);
+        Date dToday = new Date(System.currentTimeMillis());
+        String today = simpleDateFormat.format(dToday), now = simpleDateFormat2.format(dToday);
 
-        cursor.moveToNext();
-        for (int i=1; i<cursor.getCount(); i++) {
-            int id = cursor.getInt(0);
-            String name = cursor.getString(1);
-            String location = cursor.getString(2);
-            String start_date = cursor.getString(3);
-            String start_time = cursor.getString(4);
-            String end_date = cursor.getString(5);
-            String end_time = cursor.getString(6);
-            int repeat = cursor.getInt(7);
-            String memo = cursor.getString(8);
-
-            Schedule schedule_item = new Schedule(id, name, location, start_date, start_time, end_date, end_time, repeat, memo);
-            schedules.add(schedule_item);
-
-            ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(start_date, end_time));
+        // 일정을 불러오고 time테이블에 우선 할당
+        Cursor cursor = database.rawQuery("SELECT * from schedule ORDER BY start_date, start_time", null);
+        for(int i=0; i<cursor.getCount(); i++){
             cursor.moveToNext();
-            int time;
-            if(spareTime.get(0) != cursor.getString(3)) {
-                spareTime.add("23");
-                time = (23 - Integer.parseInt(spareTime.get(1)))/1;
-                if(Integer.parseInt(cursor.getString(4)) > 8){
-                    if(!spareTimes.containsKey(time))
-                        spareTimes.put(time, null);
-                    spareTimes.get(time).add(spareTime);
-                    spareTime.clear();
-                    spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(3), "8", cursor.getString(4)));
-                    time = (Integer.parseInt(spareTime.get(2)) - Integer.parseInt(spareTime.get(1))) / 1;
-                }
-            } else{
-                spareTime.add(cursor.getString(4));
-                time = (Integer.parseInt(spareTime.get(2)) - Integer.parseInt(spareTime.get(1))) / 1;
-            }
-            if(!spareTimes.containsKey(time))
-                spareTimes.put(time, null);
-            spareTimes.get(time).add(spareTime);
+            insertTimeRecord(cursor.getString(1), cursor.getString(2), cursor.getString(3), cursor.getString(4), cursor.getString(5),
+                    cursor.getString(6), cursor.getInt(7), cursor.getString(8), "schedule", cursor.getInt(0));
         }
-        cursor.close();
+        executeTimeQuery();
 
-        ArrayList<Todo> todos = new ArrayList<Todo>();
-        cursor = database.rawQuery("SELECT * from todo ORDER BY priority, date, time",null);
-
+        // 할 일 불러오기
+        LinkedList<Todo> todos = new LinkedList<Todo>();
+        cursor = database.rawQuery("SELECT * from todo " +
+                "WHERE (date = '"+ today+ "' AND time >= '" + now + "') " +
+                "OR date > '" + today + "' " +
+                "ORDER BY priority, date, time",null);
+        Log.d("MainActivity", "todo | No | name | date | time | require_time | memo | priority");
         for (int i=0; i<cursor.getCount(); i++) {
             cursor.moveToNext();
+            Todo todo_item = new Todo(cursor.getInt(0), cursor.getString(1), cursor.getString(2), cursor.getString(3),
+                    cursor.getString(4), cursor.getString(5), cursor.getFloat(6));
+            todos.add(todo_item); // 할 일들을 우선순위 값 순서대로 배열에 저장
 
-            int id = cursor.getInt(0);
-            String name = cursor.getString(1);
-            String date = cursor.getString(2);
-            String time = cursor.getString(3);
-            String req_time = cursor.getString(4);
-            String memo = cursor.getString(5);
-            float priority = cursor.getFloat(6);
-
-            Todo todo_item = new Todo(id, name, date, time, req_time, memo, priority);
-            todos.add(todo_item);
+            Log.d("MainActivity", "레코드#" + (i+1) + " : " + todo_item._id + ", " + todo_item.name + ", " + todo_item.date + ", " +
+                    todo_item.time + ", " + todo_item.req_time + ", " + todo_item.memo + ", " + todo_item.priority);
         }
         cursor.close();
 
-        for(Todo it:todos){
-            boolean isAssigned = false;
-            int requireTime = Integer.parseInt(it.req_time), maxSpace = 0;
-            for(int key:spareTimes.keySet()){
-                if(maxSpace<key)
-                    maxSpace = key;
-            }
-            for(int i=requireTime; i<=maxSpace; i++){
-                if(spareTimes.containsKey(i) && !isAssigned){
-                    for(int j=0; j<spareTimes.get(i).size(); j++){
-                        String tdate = spareTimes.get(i).get(j).get(0);
-                        String ts_time = spareTimes.get(i).get(j).get(1);
-                        String te_time = spareTimes.get(i).get(j).get(2);
-                        String end_time = Integer.toString(Integer.parseInt(ts_time)+requireTime);
-                        if(Integer.parseInt(tdate) > Integer.parseInt(it.date))
-                            break;
-                        else if(Integer.parseInt(tdate) == Integer.parseInt(it.date)){
-                            if(Integer.parseInt(end_time) > Integer.parseInt(it.time))
-                                break;
-                        }
-                        Schedule schedule_item = new Schedule(it._id, it.name, "", tdate, ts_time, tdate, end_time, 0, "");
-                        int left = (Integer.parseInt(te_time) - Integer.parseInt(end_time))/1;
-                        spareTimes.get(i).remove(j);
-                        if(spareTimes.get(i).size() == 0)
-                            spareTimes.remove(i);
-                        if(left > 0){
-                            ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(tdate, end_time, te_time));
-                            if(!spareTimes.containsKey(left))
-                                spareTimes.put(left, null);
-                            spareTimes.get(left).add(spareTime);
-                            Collections.sort(spareTimes.get(left), new Comparator<ArrayList<String>>() {
-                                @Override
-                                public int compare(ArrayList<String> o1, ArrayList<String> o2) {
-                                    if(Integer.parseInt(o1.get(0)) > Integer.parseInt(o2.get(0)))
-                                        return 1;
-                                    else if(Integer.parseInt(o1.get(0)) > Integer.parseInt(o2.get(0))){
-                                        if(Integer.parseInt(o1.get(1)) > Integer.parseInt(o2.get(1)))
-                                            return 1;
-                                        else
-                                            return -1;
-                                    }
-                                    else
-                                        return -1;
+        // 할 일들을 여유시간에 할당
+        while(!todos.isEmpty()){
+            Todo it = todos.poll();
+            // time에 먼저 할당된 일정들을 할 일의 마감 전까지의 일정만 불러와서 timeblocks 배열에 일정 사이의 여유시간을 저장
+            cursor = database.rawQuery("SELECT * from time " +
+                    "WHERE (end_date < '" + it.date + "' OR (end_date = '" + it.date + "' AND end_time < '" + it.time + "')) " +
+                    "AND ((start_date = '"+ today+ "' AND end_time >= '" + now + "') OR start_date > '" + today + "') " +
+                    "ORDER BY start_date, start_time",null);
+            cursor.moveToNext();
 
-                                }
-                            });
+            // 첫 번째 일정과 현재 시간 사이의 여유시간 계산
+            if( (today.compareTo(cursor.getString(3)) == 0 && Integer.parseInt(now.substring(0, 2)) < Integer.parseInt(cursor.getString(4).substring(0, 2))) || today.compareTo(cursor.getString(3)) < 0){
+                int start = Integer.parseInt(now.substring(0,2));
+                if(Integer.parseInt(now.substring(3, 5)) > 0)
+                    start++;
+                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, String.format("%02d", start) + ":00", cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
+                timeBlocks.add(spareTime);
+            }
+            // 일정들 사이의 여유시간 계산
+            for (int i=1; i<cursor.getCount(); i++) {
+                int start = Integer.parseInt(cursor.getString(6).substring(0,2));
+                if(Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
+                    start++;
+                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), String.format("%02d", start) + ":00")); // 이전 스케줄의 날짜, 끝시간을 여유시간 블럭에 저장.
+                cursor.moveToNext();
+                spareTime.addAll(Arrays.asList(cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
+                timeBlocks.add(spareTime);
+            }
+            // 마지막 일정과 할 일의 마감시간 사이의 여유시간 계산
+            if( (it.date.compareTo(cursor.getString(3)) == 0 && it.time.compareTo(cursor.getString(4)) > 0) || it.date.compareTo(cursor.getString(3)) > 0 ){
+                int start = Integer.parseInt(cursor.getString(6).substring(0,2));
+                if(Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
+                    start++;
+                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), String.format("%02d", start) + ":00", it.date, it.time.substring(0, 2) + ":00"));
+                timeBlocks.add(spareTime);
+            }
+            cursor.close();
+
+            // 여유시간들을 08:00~23:00 사이의 값으로 분할 및 여유시간이 0인 시간블럭 삭제
+            int maxtime=0, mintime=24;
+            for(int i=0; i<timeBlocks.size(); i++){
+                if(timeBlocks.get(i).get(0).compareTo(timeBlocks.get(i).get(2)) < 0){
+                    Date nextDay = null;
+                    try{
+                        nextDay = simpleDateFormat.parse(timeBlocks.get(i).get(0));
+                    } catch (ParseException e) {
+                        e.printStackTrace();
+                    }
+                    Calendar cal = Calendar.getInstance();
+                    cal.setTime(nextDay);
+                    cal.add(Calendar.DATE, 1);
+
+                    ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(simpleDateFormat.format(cal.getTime()), "08:00", timeBlocks.get(i).get(2), timeBlocks.get(i).get(3)));
+                    timeBlocks.get(i).remove(2);
+                    timeBlocks.get(i).remove(2);
+                    timeBlocks.get(i).addAll(Arrays.asList(timeBlocks.get(i).get(0), "23:00"));
+                    timeBlocks.add(i+1, spareTime);
+                } else {
+                    if(timeBlocks.get(i).get(1).compareTo("08:00")<0){
+                        if(timeBlocks.get(i).get(3).compareTo("08:00")<0) {
+                            timeBlocks.remove(i);
+                            i--;
+                            continue;
+                        } else {
+                            timeBlocks.get(i).remove(1);
+                            timeBlocks.get(i).add(1, "08:00");
                         }
-                        isAssigned = true;
-                        break;
+                    } else if(timeBlocks.get(i).get(3).compareTo("23:00")>0) {
+                        if(timeBlocks.get(i).get(1).compareTo("23:00")>0) {
+                            timeBlocks.remove(i);
+                            i--;
+                            continue;
+                        } else {
+                            timeBlocks.get(i).remove(3);
+                            timeBlocks.get(i).add(3, "23:00");
+                        }
                     }
                 }
+
+                int start = Integer.parseInt(timeBlocks.get(i).get(1).substring(0, 2)), end = Integer.parseInt(timeBlocks.get(i).get(3).substring(0, 2));
+                if(Integer.parseInt(timeBlocks.get(i).get(1).substring(3, 5)) > 0)
+                    start++;
+                if(end-start <= 0){
+                    timeBlocks.remove(i);
+                    i--;
+                    continue;
+                }
+                times.add(end - start);
+
+                // 여유시간의 최대 크기를 변수에 저장
+                if(maxtime < end - start)
+                    maxtime = end - start;
+                // 여유시간의 최적 크기를 변수에 저장
+                // * 최적값 : 할일이 할당될 수 있을 만큼 큰 여유시간들 중에서 가장 작은 값, 요구시간보다는 큰 여유시간 값들 중 최소값
+                if(Integer.parseInt(it.req_time) <= end - start) {
+                    if (mintime > end - start)
+                        mintime = end - start;
+                }
+
+                // 각 여유시간의 크기 계산후 times배열에 저장 및 저장된 여유시간을 로그로 출력
+                Log.d("MainActivity", "TimeBlock #" + (i+1) + ": " +times.get(i) + "시간 " +
+                        "[" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + timeBlocks.get(i).get(3) + "]");
             }
+
+            if(Integer.parseInt(it.req_time) > maxtime) {
+                int req_time = Integer.parseInt(it.req_time) - maxtime;
+                Todo todo_item = new Todo(it._id, it.name, it.date, it.time, Integer.toString(req_time), it.memo, it.priority);
+                todos.addFirst(todo_item);
+                Log.d("MainActivity", it.name + "(" + it.req_time + "시간)이 너무 커서 둘로 쪼개어 " + maxtime +"시간 만 할당하고, " + req_time + "은 다시 todo배열에 추가");
+                it.setReq_time(Integer.toString(maxtime));
+                mintime = maxtime;
+            }
+            for(int i=0; i<timeBlocks.size(); i++){
+                if(times.get(i) == mintime) {
+                    int end = Integer.parseInt(timeBlocks.get(i).get(1).substring(0, 2)) + Integer.parseInt(it.req_time);
+                    Log.d("MainActivity", it.name + "을 TimeBlock #" + (i+1) + "에 할당 >> [" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + String.format("%02d", end) + ":00" + "]");
+                    insertTimeRecord(it.name, "", timeBlocks.get(i).get(0), timeBlocks.get(i).get(1), timeBlocks.get(i).get(2), String.format("%02d", end) + ":00", 0, "", "todo", it._id);
+                    break;
+                }
+            }
+
+            Log.d("MainActivity", "--- TimeBlock의 개수: " + timeBlocks.size() + ", times의 개수: " + times.size() + " ---");
+            timeBlocks.clear();
+            times.clear();
         }
+        executeTimeQuery();
     }
 }

@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-public class ScheduleDialog extends Dialog {
+public class ScheduleDialog extends Dialog { //MonthFragment에서 사용하는 ScheduleDialog
     EditText name;
     EditText location;
     EditText start_date;
@@ -45,9 +45,9 @@ public class ScheduleDialog extends Dialog {
 
     EditText memo;
 
-    ArrayList<Schedule> items;
+    ArrayList<TimeItem> timeItems;
 
-    int position;
+    int position = MonthFragment.mPosition;
 
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
     SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
@@ -68,7 +68,7 @@ public class ScheduleDialog extends Dialog {
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) { //MonthFragment에서 사용
         super.onCreate(savedInstanceState);
         setContentView(R.layout.schedule_dialog);
 
@@ -86,12 +86,9 @@ public class ScheduleDialog extends Dialog {
 
         memo = findViewById(R.id.memo);
 
-        String sql = "SELECT * FROM schedule WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
-        items = ((MainActivity)MainActivity.mContext).selectSchedule(sql);
-        position = MonthFragment.mPosition;
-
-        //리사이클러뷰 클릭 위치를 가져와서 위치에 해당하는 아이템의 정보를 보여줌
-        Schedule item = items.get(position);
+        String sql = "SELECT * FROM time WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
+        timeItems = ((MainActivity)MainActivity.mContext).selectTime(sql);
+        TimeItem item = timeItems.get(position);
 
         name.setText(item.getName());
         location.setText(item.getLocation());

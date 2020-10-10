@@ -15,6 +15,7 @@ import android.widget.AdapterView;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.GridView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -33,19 +34,23 @@ public class WeekFragment extends Fragment {
     static GridView gridView;
     static GridAdapter adapter;
     static ArrayList<String> timeList;
-    ArrayList<Schedule> items;
+    ArrayList<TimeItem> items;
     TextView tv_date;
 
     int curMonth;
     int curWeek;
     int curYear;
 
-    static ArrayList<Schedule> week_items;
+    static ArrayList<TimeItem> week_items;
     int mPosition;
 
     static int passedIndex;
     static int passedPosition;
-    private ScheduleDialog2 dialog;
+    private ScheduleDialog2 schedule_dialog;
+    private TodoDialog2 todo_dialog;
+
+    ArrayList<String> isTodoOwn = new ArrayList<>();
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -87,22 +92,32 @@ public class WeekFragment extends Fragment {
             }
         });
 
-        items = new ArrayList<Schedule>();
-        week_items = new ArrayList<Schedule>();
+        items = new ArrayList<TimeItem>();
+        week_items = new ArrayList<TimeItem>();
 
         findWeekSchedule();
 
         gridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                //아이템 클릭하면 다이얼로그 창 띄워주는거 구현해야함
-                //클릭한 포지션의 스케줄의 아이디를 넘기면 되지 않을까? 아이디를 어떻게 알아낼건데....?
                 if (timeList.get(position) != "") {
                     passedPosition = position;
                     passedIndex = Integer.parseInt(timeList.get(position));
-                    Log.d("WeekFragment", "포지션 : " + passedIndex);
-                    dialog = new ScheduleDialog2(getContext());
-                    dialog.show();
+                    Log.d("WeekFragment", "passedPosition : " + passedPosition);
+                    Log.d("WeekFragment", "passedIndex : " + passedIndex);
+
+                    TimeItem timeItem = week_items.get(passedIndex);
+
+                    if (timeItem.getType().equals("schedule")) {
+                        schedule_dialog = new ScheduleDialog2(getContext());
+                        schedule_dialog.show();
+
+                    }
+
+                    else if (timeItem.getType().equals("todo")) {
+                        todo_dialog = new TodoDialog2(getContext());
+                        todo_dialog.show();
+                    }
                 }
             }
         });
@@ -111,6 +126,7 @@ public class WeekFragment extends Fragment {
     }
 
     public void setTimeList() { //시간표 셋팅해주는 함수
+        timeList.clear();
         int count = 0;
 
         for (int i=0; i<120; i++) {
@@ -125,14 +141,14 @@ public class WeekFragment extends Fragment {
     }
 
     public void findWeekSchedule() { //주에 해당하는 스케줄 가져오기
+        isTodoOwn.clear();
         week_items.clear();
         int week;
         Calendar cal = Calendar.getInstance();
 
-        String sql = "SELECT _id, name, location, start_date, start_time, " +
-                "end_date, end_time, repeat, memo from schedule ORDER BY start_date, start_time";
+        String sql = "SELECT * FROM time ORDER BY start_date, start_time";
 
-        items = ((MainActivity)getActivity()).selectSchedule(sql);
+        items = ((MainActivity)getActivity()).selectTime(sql);
 
         for (int i=0; i<items.size(); i++) {
             String start_date = items.get(i).getStart_date();
@@ -143,12 +159,36 @@ public class WeekFragment extends Fragment {
             int day = Integer.parseInt(splitDate[2]);
 
             cal.set(year, month-1, day);
-
             week = cal.get(Calendar.WEEK_OF_MONTH);
 
-            if (week == curWeek) {
+            if (year == curYear && month == curMonth &&week == curWeek) {
                 week_items.add(items.get(i));
             }
+        }
+
+        for (int i=0; i<week_items.size(); i++) {
+            if (week_items.get(i).getType().equals("todo")) {
+                String splitStartTime[] = week_items.get(i).start_time.split(":");
+                int start_hour = Integer.parseInt(splitStartTime[0]);
+
+                String splitDate[] = week_items.get(i).start_date.split("/");
+
+                int year = Integer.parseInt(splitDate[0]);
+                int month = Integer.parseInt(splitDate[1]);
+                int day = Integer.parseInt(splitDate[2]);
+
+                Calendar cal2 = Calendar.getInstance();
+                cal2.set(year, month-1, day);
+                int dayOfWeek = cal2.get(Calendar.DAY_OF_WEEK);
+
+                int startPosition = dayOfWeek + (8 * (start_hour - 8));
+
+                isTodoOwn.add(Integer.toString(startPosition));
+            }
+        }
+        Log.d("WeekFragment", "-----");
+        for (int i=0; i<isTodoOwn.size(); i++) {
+            Log.d("WeekFragment", isTodoOwn.get(i)+"");
         }
     }
 
@@ -166,7 +206,6 @@ public class WeekFragment extends Fragment {
     }
 
     public void preTimeTable() {
-        timeList.clear();
         setTimeList();
 
         if (curWeek == 1) {
@@ -188,7 +227,6 @@ public class WeekFragment extends Fragment {
     }
 
     public void nextTimeTable() {
-        timeList.clear();
         setTimeList();
 
         if (curWeek == findMaxWeek()) {
@@ -215,7 +253,7 @@ public class WeekFragment extends Fragment {
     public class GridAdapter extends BaseAdapter {
         private final List<String> list;
         private final LayoutInflater inflater;
-        ArrayList<Schedule> items = new ArrayList<>();
+        ArrayList<TimeItem> items = new ArrayList<>();
 
         public GridAdapter(Context context, List<String> list) {
             this.list = list;
@@ -237,7 +275,7 @@ public class WeekFragment extends Fragment {
             return position;
         }
 
-        public void setItems(ArrayList<Schedule> items) {
+        public void setItems(ArrayList<TimeItem> items) {
             this.items = items;
         }
 
@@ -249,9 +287,11 @@ public class WeekFragment extends Fragment {
                 convertView = inflater.inflate(R.layout.item_timetable_gridview, parent, false);
                 holder = new ViewHolder();
 
+                holder.imageView = convertView.findViewById(R.id.imageView);
                 holder.textView = convertView.findViewById(R.id.textView);
                 holder.linearLayout = convertView.findViewById(R.id.linearLayout);
                 convertView.setTag(holder);
+
             }
             else {
                 holder = (ViewHolder) convertView.getTag();
@@ -263,6 +303,7 @@ public class WeekFragment extends Fragment {
                     }
                 });
                 holder.linearLayout.setBackgroundColor(Color.WHITE);
+                holder.imageView.setImageResource(0);
             }
 
             holder.textView.setText(getItem(position));
@@ -308,19 +349,26 @@ public class WeekFragment extends Fragment {
 
                             if (position == startPosition) {
                                 holder.textView.setText(name);
-                                holder.textView.setTextSize(13);
+                                holder.textView.setTextSize(11);
+
+                                if (isTodoOwn.contains(String.valueOf(startPosition)))
+                                    holder.imageView.setImageResource(R.drawable.star);
                             }
                         }
                         mPosition += 8;
                     }
+
                 list.set(startPosition, String.valueOf(i));
+
             }
+
 
             return convertView;
         }
     }
 
     private class ViewHolder {
+        ImageView imageView;
         TextView textView;
         LinearLayout linearLayout;
     }

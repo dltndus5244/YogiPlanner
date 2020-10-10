@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-public class ScheduleDialog2 extends Dialog {
+public class ScheduleDialog2 extends Dialog { //WeekFragment에서 사용하는 ScheduleDialog
     EditText name;
     EditText location;
     EditText start_date;
@@ -73,7 +73,7 @@ public class ScheduleDialog2 extends Dialog {
 
         memo = findViewById(R.id.memo);
 
-        Schedule item = WeekFragment.week_items.get(WeekFragment.passedIndex);
+        TimeItem item = WeekFragment.week_items.get(WeekFragment.passedIndex);
 
         name.setText(item.getName());
         location.setText(item.getLocation());
@@ -81,7 +81,6 @@ public class ScheduleDialog2 extends Dialog {
         start_time.setText(item.getStart_time());
         end_date.setText(item.getEnd_date());
         end_time.setText(item.getEnd_time());
-
         int repeat = item.getRepeat();
 
         if (repeat == 1) {

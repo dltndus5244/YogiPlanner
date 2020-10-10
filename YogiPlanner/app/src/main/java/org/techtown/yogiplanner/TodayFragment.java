@@ -21,6 +21,8 @@ public class TodayFragment extends Fragment {
     static int passedPosition;
     static RecyclerView recyclerView;
 
+    public static ArrayList<Todo> items;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -42,12 +44,11 @@ public class TodayFragment extends Fragment {
         String todayDate = sdf.format(calendar.getTime());
         String todayTime = sdf2.format(calendar.getTime());
 
-//        String sql = "SELECT * FROM todo WHERE date >= '" + todayDate + "' AND time >= '" + todayTime + "' ORDER BY date, time";
         String sql = "SELECT * FROM todo WHERE (date = '" + todayDate + "' AND time >= '" + todayTime + "') OR date > '" + todayDate + "' ORDER BY date, time";
-        ArrayList<Todo> result = ((MainActivity) getActivity()).selectTodo(sql);
+        items = ((MainActivity) getActivity()).selectTodo(sql);
 
 
-        adapter.setItems(result);
+        adapter.setItems(items);
 
         adapter.setOnItemClickListener(new OnTodoItemClickListener() {
             @Override

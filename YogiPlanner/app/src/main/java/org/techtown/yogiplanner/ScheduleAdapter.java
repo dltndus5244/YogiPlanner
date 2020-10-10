@@ -1,5 +1,6 @@
 package org.techtown.yogiplanner;
 
+import android.graphics.Color;
 import android.text.Layout;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -15,7 +16,7 @@ import java.util.ArrayList;
 
 public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHolder>
                             implements OnScheduleItemClickListener {
-    ArrayList<Schedule> items = new ArrayList<Schedule>();
+    ArrayList<TimeItem> items = new ArrayList<TimeItem>();
     OnScheduleItemClickListener listener;
 
     @NonNull
@@ -30,7 +31,7 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHo
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
 
-        Schedule item = items.get(position);
+        TimeItem item = items.get(position);
         Log.d("ScheduleAdapter","item : " + getItemCount());
         holder.setItem(item);
     }
@@ -40,19 +41,19 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHo
         return items.size();
     }
 
-    public void addItem(Schedule item) {
+    public void addItem(TimeItem item) {
         items.add(item);
     }
 
-    public void setItems(ArrayList<Schedule> items) {
+    public void setItems(ArrayList<TimeItem> items) {
         this.items = items;
     }
 
-    public Schedule getItem(int position) {
+    public TimeItem getItem(int position) {
         return items.get(position);
     }
 
-    public void setItem(int position, Schedule item) {
+    public void setItem(int position, TimeItem item) {
         items.set(position, item);
     }
 
@@ -91,10 +92,14 @@ public class ScheduleAdapter extends RecyclerView.Adapter<ScheduleAdapter.ViewHo
             });
         }
 
-        public void setItem(Schedule item) {
+        public void setItem(TimeItem item) {
             textView.setText(item.getStart_time());
             textView2.setText(item.getEnd_time());
             textView3.setText(item.getName());
+
+            if (item.getType().equals("todo")) {
+                textView3.setTextColor(Color.RED);
+            }
         }
     }
 }

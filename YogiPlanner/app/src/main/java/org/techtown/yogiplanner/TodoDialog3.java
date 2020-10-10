@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -17,11 +18,12 @@ import androidx.annotation.NonNull;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Month;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 TodoDialog
+public class TodoDialog3 extends Dialog { //MonthFragment에서 사용하는 TodoDialog
     EditText name;
     EditText due_date;
     EditText due_time;
@@ -29,7 +31,8 @@ public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 Todo
     EditText memo;
 
     ArrayList<Todo> items;
-    int position = TodayFragment.passedPosition;
+    Todo item;
+    int position = MonthFragment.mPosition;
 
     Calendar calendar;
     Calendar calendar1;
@@ -40,7 +43,7 @@ public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 Todo
     Date date;
     Date time;
 
-    public TodoDialog(@NonNull Context context) {
+    public TodoDialog3(@NonNull Context context) {
         super(context);
     }
 
@@ -55,15 +58,27 @@ public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 Todo
         req_time = findViewById(R.id.req_time);
         memo = findViewById(R.id.memo);
 
-        calendar = Calendar.getInstance();
+        TimeItem timeItem = MonthFragment.items.get(position);
+        int item_id = timeItem.getItem_id();
 
-        String todayDate = simpleDateFormat.format(calendar.getTime());
-        String todayTime = simpleDateFormat2.format(calendar.getTime());
+        String sql = "SELECT * FROM todo WHERE _id = " + item_id;
+        try {
+            Cursor cursor = MainActivity.database.rawQuery(sql, null);
+            cursor.moveToNext();
 
-        String sql = "SELECT * FROM todo WHERE (date = '" + todayDate + "' AND time >= '" + todayTime + "') OR date > '" + todayDate + "' ORDER BY date, time";
-        items = ((MainActivity)MainActivity.mContext).selectTodo(sql);
+            int id = cursor.getInt(0);
+            String item_name = cursor.getString(1);
+            String item_date = cursor.getString(2);
+            String item_time = cursor.getString(3);
+            String item_req_time = cursor.getString(4);
+            String item_memo = cursor.getString(5);
+            float item_priority = cursor.getFloat(6);
 
-        Todo item = items.get(position);
+            item = new Todo(id, item_name, item_date, item_time, item_req_time, item_memo, item_priority);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         name.setText(item.getName());
         due_date.setText(item.getDate());
@@ -76,6 +91,7 @@ public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 Todo
             date = simpleDateFormat.parse(item.getDate());
         } catch (ParseException e) {}
 
+        calendar = Calendar.getInstance();
         calendar.setTime(date);
 
         due_date.setOnClickListener(new View.OnClickListener() {
@@ -125,18 +141,20 @@ public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 Todo
                 String dreq_time = req_time.getText().toString();
                 String dmemo = memo.getText().toString();
 
-                ((MainActivity)MainActivity.mContext).updateTodo(position, dname,
+                ((MainActivity)MainActivity.mContext).updateTodo3(position, dname,
                         dDate, dtime, dreq_time, dmemo);
+
                 dismiss();
             }
         });
+
 
         //삭제 버튼 클릭 이벤트 -> 데이터 삭제
         Button del_button = findViewById(R.id.del_button);
         del_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((MainActivity)MainActivity.mContext).deleteTodo(position);
+                ((MainActivity)MainActivity.mContext).deleteTodo3(position);
                 dismiss();
             }
         });

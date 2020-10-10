@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -15,21 +16,22 @@ import android.widget.TimePicker;
 
 import androidx.annotation.NonNull;
 
+import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 TodoDialog
+public class TodoDialog2 extends Dialog { //WeekFragment에서 사용하는 TodoDialog
     EditText name;
     EditText due_date;
     EditText due_time;
     EditText req_time;
     EditText memo;
 
-    ArrayList<Todo> items;
-    int position = TodayFragment.passedPosition;
+    Todo item;
+    int position = WeekFragment.passedIndex;
 
     Calendar calendar;
     Calendar calendar1;
@@ -40,7 +42,7 @@ public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 Todo
     Date date;
     Date time;
 
-    public TodoDialog(@NonNull Context context) {
+    public TodoDialog2(@NonNull Context context) {
         super(context);
     }
 
@@ -57,13 +59,28 @@ public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 Todo
 
         calendar = Calendar.getInstance();
 
-        String todayDate = simpleDateFormat.format(calendar.getTime());
-        String todayTime = simpleDateFormat2.format(calendar.getTime());
+        TimeItem timeItem = WeekFragment.week_items.get(position);
+        int item_id = timeItem.getItem_id();
 
-        String sql = "SELECT * FROM todo WHERE (date = '" + todayDate + "' AND time >= '" + todayTime + "') OR date > '" + todayDate + "' ORDER BY date, time";
-        items = ((MainActivity)MainActivity.mContext).selectTodo(sql);
+        String sql = "SELECT * FROM todo WHERE _id = " + item_id;
 
-        Todo item = items.get(position);
+        try {
+            Cursor cursor = MainActivity.database.rawQuery(sql, null);
+            cursor.moveToNext();
+
+            int id = cursor.getInt(0);
+            String item_name = cursor.getString(1);
+            String item_date = cursor.getString(2);
+            String item_time = cursor.getString(3);
+            String item_req_time = cursor.getString(4);
+            String item_memo = cursor.getString(5);
+            float item_priority = cursor.getFloat(6);
+
+            item = new Todo(id, item_name, item_date, item_time, item_req_time, item_memo, item_priority);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         name.setText(item.getName());
         due_date.setText(item.getDate());
@@ -125,8 +142,9 @@ public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 Todo
                 String dreq_time = req_time.getText().toString();
                 String dmemo = memo.getText().toString();
 
-                ((MainActivity)MainActivity.mContext).updateTodo(position, dname,
+                ((MainActivity)MainActivity.mContext).updateTodo2(position, dname,
                         dDate, dtime, dreq_time, dmemo);
+
                 dismiss();
             }
         });
@@ -136,7 +154,7 @@ public class TodoDialog extends Dialog { //TodayFragment에서 사용하는 Todo
         del_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                ((MainActivity)MainActivity.mContext).deleteTodo(position);
+                ((MainActivity)MainActivity.mContext).deleteTodo2(position);
                 dismiss();
             }
         });

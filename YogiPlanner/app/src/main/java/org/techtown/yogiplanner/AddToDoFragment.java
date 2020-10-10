@@ -90,6 +90,8 @@ public class AddToDoFragment extends Fragment {
                 Log.d("Todo", "우선순위 : " + _priority);
 
                 ((MainActivity)getActivity()).insertTodoRecord(_name, _date, _time, _reqTime, _memo, _priority);
+
+                ((MainActivity)getActivity()).assignTodo();
                 clearText();
 
             }
