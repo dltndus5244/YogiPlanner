@@ -94,8 +94,6 @@ public class AddToDoFragment extends Fragment {
                 ((MainActivity)getActivity()).assignTodo();
                 clearText();
 
-                ((MainActivity)getActivity()).assignTodo();
-
             }
         });
 

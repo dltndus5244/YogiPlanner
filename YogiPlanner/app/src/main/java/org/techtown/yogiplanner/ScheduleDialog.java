@@ -219,20 +219,15 @@ public class ScheduleDialog extends Dialog { //MonthFragment에서 사용하는 
                 ((MainActivity)MainActivity.mContext).updateSchedule(position, dname, dlocation,
                         dstart_date, dstart_time, dend_date, dend_time, drepeat, dmemo);
                 dismiss();
-
-                ((MainActivity)MainActivity.mContext).assignTodo();
             }
         });
 
-        // 삭제 버튼 클릭 이벤트 -> 데이터 수정
         Button del_button = findViewById(R.id.del_button);
         del_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 ((MainActivity)MainActivity.mContext).deleteSchedule(position);
                 dismiss();
-
-                ((MainActivity)MainActivity.mContext).assignTodo();
             }
         });
     }

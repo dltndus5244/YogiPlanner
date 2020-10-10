@@ -202,8 +202,6 @@ public class ScheduleDialog2 extends Dialog { //WeekFragment에서 사용하는 
                 ((MainActivity)MainActivity.mContext).updateSchedule2(WeekFragment.passedIndex, dname, dlocation,
                         dstart_date, dstart_time, dend_date, dend_time, drepeat, dmemo);
                 dismiss();
-
-                ((MainActivity)MainActivity.mContext).assignTodo();
             }
         });
 
@@ -213,8 +211,6 @@ public class ScheduleDialog2 extends Dialog { //WeekFragment에서 사용하는 
             public void onClick(View v) {
                 ((MainActivity)MainActivity.mContext).deleteSchedule2(WeekFragment.passedIndex);
                 dismiss();
-
-                ((MainActivity)MainActivity.mContext).assignTodo();
             }
         });
     }
