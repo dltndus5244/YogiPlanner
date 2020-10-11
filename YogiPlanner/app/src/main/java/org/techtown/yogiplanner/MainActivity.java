@@ -1,13 +1,19 @@
 package org.techtown.yogiplanner;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.AlarmManager;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.format.DateFormat;
 import android.util.Log;
@@ -54,6 +60,8 @@ public class MainActivity extends AppCompatActivity {
     private FloatingActionButton fab_main, fab_sub1, fab_sub2;
     private Animation fab_open, fab_close;
     private boolean isFabOpen = false;
+
+    public static ArrayList<TimeItem> alarm_items;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,6 +142,8 @@ public class MainActivity extends AppCompatActivity {
         createTimeTable();
 
         assignTodo();
+
+        notification();
 
     }
 
@@ -839,5 +849,50 @@ public class MainActivity extends AppCompatActivity {
             times.clear();
         }
         executeTimeQuery();
+        notification();
+    }
+
+    /*
+    할 일 알림 함수 - 할 일의 시작 시간이 되면 상단바 알림
+     */
+    public void notification() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/ddHH:mm");
+        SimpleDateFormat format2 = new SimpleDateFormat("yyyy/MM/dd");
+        SimpleDateFormat format3 = new SimpleDateFormat("HH:mm:ss");
+
+        Date now = new Date();
+        Date dStart = null;
+        Calendar calendar = Calendar.getInstance();
+        String todayDate = format2.format(now);
+        String todayTime = format3.format(now);
+
+        String sql = "SELECT * FROM time WHERE type = 'todo' AND (start_date = '" + todayDate + "' AND start_time >= '" + todayTime + "') " +
+        "OR (type = 'todo' AND start_date > '" + todayDate + "') ORDER BY start_date, start_time";
+        alarm_items = selectTime(sql);
+
+        for (int i=0; i<alarm_items.size(); i++) {
+            TimeItem item = alarm_items.get(i);
+            String start = item.getStart_date().concat(item.getStart_time()).concat(":00");
+            Log.d("MainActivity", item.getName() + ", " + item.getStart_time());
+
+            AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            Intent intent = new Intent(MainActivity.this, alarmReceiver.class);
+            intent.putExtra("id", i);
+
+            PendingIntent sender = PendingIntent.getBroadcast(MainActivity.this, i, intent, 0);
+
+            try {
+                dStart = format.parse(start);
+                calendar.setTime(dStart);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                manager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
+            } else {
+                manager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
+            }
+        }
     }
 }
