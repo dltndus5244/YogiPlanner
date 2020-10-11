@@ -146,7 +146,16 @@ public class AddScheduleFragment extends Fragment {
 
 
                 ((MainActivity)getActivity()).insertScheduleRecord(_name, _location, _start_date, _start_time,
-                        _end_date, _end_time, _repeat, _memo);
+                        _end_date, _end_time, _repeat, _memo, 0); //★ ori_id에 0 넣기 추가
+
+                if(_repeat ==  2 || _repeat == 3 || _repeat == 4){   //반복할경우 repeat table에 data 넣어주는 역할 ★
+                    ((MainActivity)getActivity()).insertRepeatRecord(_repeat, _start_date, _end_date);
+                    ((MainActivity)getActivity()).repeatSchedule(_repeat);
+                    /*Log.d("MainActivity", "---------------바뀐일정--------------");
+                    ((MainActivity)getActivity()).executeScheduleQuery(); //Schedule Table 내용 보기
+                    Log.d("MainActivity", "---------------바뀐리핏--------------");
+                    ((MainActivity)getActivity()).executeRepeatQuery(); //Repeat Table 내용 보기*/
+                }
 
                 ((MainActivity)getActivity()).assignTodo();
                 clearText();

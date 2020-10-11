@@ -10,9 +10,10 @@ public class Schedule {
     String end_time;
     int repeat;
     String memo;
+    int ori_id; //★
 
     public Schedule(int _id, String name, String location, String start_date, String start_time, String end_date, String end_time,
-                    int repeat, String memo) {
+                    int repeat, String memo, int ori_id) {  //★
         this._id = _id;
         this.name = name;
         this.location = location;
@@ -22,6 +23,7 @@ public class Schedule {
         this.end_time = end_time;
         this.repeat = repeat;
         this.memo = memo;
+        this.ori_id = ori_id;   //★
     }
 
     public int get_id() {
@@ -95,4 +97,12 @@ public class Schedule {
     public void setMemo(String memo) {
         this.memo = memo;
     }
+
+    public int getOri_id() {
+        return ori_id;
+    }   //★
+
+    public void setOri_id(int ori_id) {
+        this.ori_id = ori_id;
+    }   //★
 }

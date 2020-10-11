@@ -1,0 +1,66 @@
+2020.10.11 update(이지현)
+지난수정:★(2020.09.27)
+이번수정:☆ 검색하면 나옵니당
+
+<MainActivity>
+- import java.util.GregorianCalendar; 추가
+- ScheduleDialog, ScheduleDialog2 에 다일로그로 추가해야겠다
+- public ArrayList<Schedule> selectSchedule(String sql) {} 에 ori_id 추가
+- public void executeScheduleQuery() {} 에 ori_id 추가
+- public void executeRepeatQuery() {} repeat 테이블 조회 함수(확인용) 추가
+- public void repeatSchedule(int repeat_type) {} 추가, repeat_type 매일(2).매주(3).매월(4) - AddScheduleFragment 에서 사용
+- public void insertRepeatRecord(int repeat_type, String start_date, String end_date) {} 추가 - AddScheduleFragment 에서 사용
+- public ArrayList<Repeat> selectRepeat(String sql) {} 추가
+- public void insertScheduleRecord 매개변수에 ori_id 추가, - repeatSchedule 함수, AddScheduleFragment(여기선 ori_id 0으로 입력)에서 사용
+- private void createRepeatTable() "_id integer PRIMARY KEY, "에서 autoincrement 삭제(안해도상관없긴함)
+- public void deleteSchedule(int position, int type) {} 추가, 월간 반복일정 삭제용
+- public void deleteSchedule2(int position, int type) {} 추가, 월간 반복일정 삭제용
+
+<Schedule.java>
+- ori_id 추가
+
+<AddScheduleFragment.java>
+- insertSchedule 매개변수에 ori_id:0 추가
+- onClick 함수에 if(_repeat ==  2 || _repeat == 3 || _repeat == 4){} 추가, 반복할경우 repeat table에 data 넣어주는 역할
+
+<ScheduleDialog, ScheduleDialog2> //월간, 주간
+- import android.app.AlertDialog; 추가
+- final int repeat_type = item.getRepeat(); 추가, 반복삭제용, final 첨써봐서 혹시몰라서,, 상관없으면 repeat랑 합쳐도 됨
+- del_button.setOnClickListener() 이벤트에 if(repeat_type != 1) {} 추가, 반복삭제("이 일정만 삭제", "이후 일정 모두 삭제", "전체 반복 일정 삭제")
+- 앞에거 위에 final int[] selectedItem = {0}; 추가, if(repeat_type != 1) {}에서 사용
+
+
+---------------할 것
+
+0. Todo 없으면 반복 추가 안되는 문제(last_date 값 없어서) ---> 디폴트값 정의해줘서 해결
+1. 삭제 화면 만들기 ---> 걍 alartdialog씀
+2. 삭제 알고리즘 추가(연관된일정모두삭제/이일정만삭제/이일정이후모두삭제) ---> 성공
+    연관된일정모두삭제/이 일정이후 모두 삭제가 renew 1->0되는 경우
+    방법은 schedule에 있는 _id와 ori_id를 이용할겁니다
+    연관된일정모두삭제 ---> 해당 일정의 ori_id와 ori_id가 같거나 _id가 같은 일정 다 삭제
+    이일정만삭제ㅇ    ---> 해당 일정만 삭제(기존과 같음)
+    이일정이후모두삭제 ---> 해당 일정의 ori_id와 ori_id가 같으면서, 시작일이 같거나 큰 일정들을 삭제
+3. 월 넘어갈 때 '해당 일' 없으면 그 월의 '마지막 일'로 일이 바뀌어버리는 문제 수정, 만약 그 날짜 없으면 그 달엔 추가x, 다음달로 건너뜀 ---> 아직 안함
+4. update의 경우 하나도 체크 안해봄 ---> 적용안됨.수정하거나...아님 수정창에서 반복을 지워도 될듯?
+
+이밑은모르겠음
+- updateRepeatDate 쓸지 안쓸지 모르겠음 근데 고칠거임
+- 1. 그리고 지금 버젼 좀.... 너무 쓸데없이 다 체크하는 느낌이 있음.... 첨 입력받을 때 해당 id만 받아오고
+     싶다 할 수 있을것같은데 다시 고치기...음.......
+- 2. 아님 아예 매개변수 없애고 통째로 싹 체크할수도 있음... 이게날수도
+
+
+---------오류목록----------
+- 1시간 이내 일정이 주간에서 숫자로 뜨는 이유는...? 일부러인가?
+- 반복 라스트데이+해당주토욜까지 추가로 바꾸는게 낫겠음 주간에서 볼 때... ---이건 부가적인 문제
+- 일정 없는 상태에서 할 일 입력하면 할일할당에서 오류남,,, 마찬가지로 할 일 있는데 일정 다 삭제해도 오류 남
+- 할 일 있는 상태에서 반복일정 다 삭제하면 터지는 오류가 있음...;;;(이유는 추측 아닐수도 있음) <// 첫 번째 일정과 현재 시간 사이의 여유시간 계산> 이 부분에서 오류
+- 음...할일 할당 알고리즘 좀 수정해야 할 것 같아용... 할당된게 좀 이상하네여... 지금 이전시간에 할당하기도 하고 빈 시간에 할당 안되기도 하고..
+- 일정에서 반복 기본값 안함으로 체크 되어있으면 좋겠음 ---이건 부가적인 문제
+- 시작 시간 바뀌면 끝 시간도 1시간 후로 자동으로 바뀌었으면 좋겠음 ---이건 부가적인 문제
+- 월에서 일정 제목 수정하려고 하면 배경에서 달력 사라지고 일정이 올라가게? 이상하게 바뀜 주간도 하단 바가 올라가네....
+- AddToDOFragment에 public int getRemainTime(String endDate, String endTime)  { //여유시간 구하는 함수 삭제해도 되지 않나요?
+- 색깔 너무 많아지면 주간 볼라할 때 holder.linearLayout.setBackgroundColor(colors[i]); 오류나서 꺼짐ㅜㅜ
+    - 주간에서 같은 반복일정=ori_id 같은 일정 같은 색으로 나오게: WeekFragment
+    - 할일도 같은 색으루,,,나뉘었을경우에
+    로 해결하면 좋을 듯 해용

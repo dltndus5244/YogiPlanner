@@ -4,7 +4,9 @@ import android.app.Activity;
 import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
+import android.app.AlertDialog; //☆
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -96,6 +98,8 @@ public class ScheduleDialog extends Dialog { //MonthFragment에서 사용하는 
         start_time.setText(item.getStart_time());
         end_date.setText(item.getEnd_date());
         end_time.setText(item.getEnd_time());
+
+        final int repeat_type = item.getRepeat(); //☆ 반복삭제용, final 첨써봐서 혹시몰라서,, 상관없으면 repeat랑 합쳐도 됨
 
         int repeat = item.getRepeat();
 
@@ -222,10 +226,49 @@ public class ScheduleDialog extends Dialog { //MonthFragment에서 사용하는 
             }
         });
 
+        final int[] selectedItem = {0}; //☆
+
         Button del_button = findViewById(R.id.del_button);
         del_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //참고: https://loveiskey.tistory.com/171
+                //☆ 반복 일정일 경우 삭제 고르는 코드, 여기부터
+                if(repeat_type != 1) {
+                    final String[] items = new String[]{"이 일정만 삭제", "이후 일정 모두 삭제", "전체 반복 일정 삭제"};
+
+                    AlertDialog.Builder dialog = new AlertDialog.Builder(getContext());
+                    dialog  .setTitle("반복 일정 삭제")
+                            .setCancelable(true)
+                            .setSingleChoiceItems(items, 0, new DialogInterface.OnClickListener(){
+                                @Override
+                                public void onClick(DialogInterface dialog, int which){
+                                    selectedItem[0] = which;
+                                }
+                            })
+                            .setPositiveButton("확인", new DialogInterface.OnClickListener(){
+                                @Override
+                                public void onClick(DialogInterface dialog, int which){
+                                    if(items[selectedItem[0]] == "이 일정만 삭제"){ //이건 계속 갱신 됨
+                                        ((MainActivity)MainActivity.mContext).deleteSchedule(position);}
+                                    else if(items[selectedItem[0]] == "이후 일정 모두 삭제"){
+                                        ((MainActivity)MainActivity.mContext).deleteSchedule(position, 2);}
+                                    else if(items[selectedItem[0]] == "전체 반복 일정 삭제"){
+                                        ((MainActivity)MainActivity.mContext).deleteSchedule(position, 3);}
+                                }
+                            })
+                            .setNeutralButton("취소", new DialogInterface.OnClickListener(){
+                                @Override
+                                public void onClick(DialogInterface dialog, int which){
+                                    dismiss();
+                                    /*Toast.makeText(getContext()
+                                            , "취소 버튼을 눌렀습니다."
+                                            , Toast.LENGTH_SHORT).show();*/
+                                }
+                            });
+                    dialog.create();
+                    dialog.show();
+                } else//여기까지
                 ((MainActivity)MainActivity.mContext).deleteSchedule(position);
                 dismiss();
             }
