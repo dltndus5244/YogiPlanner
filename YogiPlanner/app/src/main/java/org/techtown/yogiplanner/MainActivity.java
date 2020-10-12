@@ -135,21 +135,21 @@ public class MainActivity extends AppCompatActivity {
 
         createDatabase();
 
-        database.execSQL("DROP TABLE schedule");
-        database.execSQL("DROP TABLE todo");
-        database.execSQL("DROP TABLE repeat");
-        database.execSQL("DROP TABLE time");
+//        database.execSQL("DROP TABLE schedule");
+//        database.execSQL("DROP TABLE todo");
+//        database.execSQL("DROP TABLE repeat");
+//        database.execSQL("DROP TABLE time");
 
         createScheduleTable();
         createTodoTable();
         createRepeatTable();
         createTimeTable();
 
-        /*Log.d("MainActivity", "확인");
-        executeScheduleQuery();
-        //executeTodoQuery();
-        executeRepeatQuery();
-        //executeTimeQuery();*/
+//        Log.d("MainActivity", "확인");
+//        executeScheduleQuery();
+//        executeTodoQuery();
+//        executeRepeatQuery();
+//        executeTimeQuery();
 
         assignTodo();
         notification();
@@ -873,31 +873,39 @@ public class MainActivity extends AppCompatActivity {
                     "ORDER BY start_date, start_time",null);
             cursor.moveToNext();
 
-            // 첫 번째 일정과 현재 시간 사이의 여유시간 계산
-            if( (today.compareTo(cursor.getString(3)) == 0 && Integer.parseInt(now.substring(0, 2)) < Integer.parseInt(cursor.getString(4).substring(0, 2))) || today.compareTo(cursor.getString(3)) < 0){
+            if(cursor.getCount() == 0){ // 현재시간부터 할 일 마감 전까지 일정이 없으면 마감 전까지의 시간을 다 여유시간으로 계산
                 int start = Integer.parseInt(now.substring(0,2));
                 if(Integer.parseInt(now.substring(3, 5)) > 0)
                     start++;
-                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, String.format("%02d", start) + ":00", cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
+                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, String.format("%02d", start) + ":00", it.date, it.time.substring(0, 2) + ":00"));
                 timeBlocks.add(spareTime);
-            }
-            // 일정들 사이의 여유시간 계산
-            for (int i=1; i<cursor.getCount(); i++) {
-                int start = Integer.parseInt(cursor.getString(6).substring(0,2));
-                if(Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
-                    start++;
-                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), String.format("%02d", start) + ":00")); // 이전 스케줄의 날짜, 끝시간을 여유시간 블럭에 저장.
-                cursor.moveToNext();
-                spareTime.addAll(Arrays.asList(cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
-                timeBlocks.add(spareTime);
-            }
-            // 마지막 일정과 할 일의 마감시간 사이의 여유시간 계산
-            if( (it.date.compareTo(cursor.getString(3)) == 0 && it.time.compareTo(cursor.getString(4)) > 0) || it.date.compareTo(cursor.getString(3)) > 0 ){
-                int start = Integer.parseInt(cursor.getString(6).substring(0,2));
-                if(Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
-                    start++;
-                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), String.format("%02d", start) + ":00", it.date, it.time.substring(0, 2) + ":00"));
-                timeBlocks.add(spareTime);
+            } else {
+                // 첫 번째 일정과 현재 시간 사이의 여유시간 계산
+                if ((today.compareTo(cursor.getString(3)) == 0 && Integer.parseInt(now.substring(0, 2)) < Integer.parseInt(cursor.getString(4).substring(0, 2))) || today.compareTo(cursor.getString(3)) < 0) {
+                    int start = Integer.parseInt(now.substring(0, 2));
+                    if (Integer.parseInt(now.substring(3, 5)) > 0)
+                        start++;
+                    ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, String.format("%02d", start) + ":00", cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
+                    timeBlocks.add(spareTime);
+                }
+                // 일정들 사이의 여유시간 계산
+                for (int i = 1; i < cursor.getCount(); i++) {
+                    int start = Integer.parseInt(cursor.getString(6).substring(0, 2));
+                    if (Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
+                        start++;
+                    ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), String.format("%02d", start) + ":00")); // 이전 스케줄의 날짜, 끝시간을 여유시간 블럭에 저장.
+                    cursor.moveToNext();
+                    spareTime.addAll(Arrays.asList(cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
+                    timeBlocks.add(spareTime);
+                }
+                // 마지막 일정과 할 일의 마감시간 사이의 여유시간 계산
+                if ((it.date.compareTo(cursor.getString(3)) == 0 && it.time.compareTo(cursor.getString(4)) > 0) || it.date.compareTo(cursor.getString(3)) > 0) {
+                    int start = Integer.parseInt(cursor.getString(6).substring(0, 2));
+                    if (Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
+                        start++;
+                    ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), String.format("%02d", start) + ":00", it.date, it.time.substring(0, 2) + ":00"));
+                    timeBlocks.add(spareTime);
+                }
             }
             cursor.close();
 
