@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project version="4">
-  <component name="ProjectModuleManager">
-    <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/257747553/YogiPlanner.iml" filepath="$PROJECT_DIR$/.idea/modules/257747553/YogiPlanner.iml" group="YogiPlanner" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app.iml" filepath="$PROJECT_DIR$/.idea/modules/app.iml" group="YogiPlanner/app" />
-    </modules>
-  </component>
-</project>
