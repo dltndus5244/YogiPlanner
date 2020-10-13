@@ -317,8 +317,6 @@ public class WeekFragment extends Fragment {
                 });
             }
 
-            int[] colors = getResources().getIntArray(R.array.Rainbow);
-
             for (int i=0; i<week_items.size(); i++) {
                 String name = week_items.get(i).getName();
 
@@ -342,10 +340,21 @@ public class WeekFragment extends Fragment {
                 int endPosition = (dayOfWeek + (8 * ((start_hour - 8) + (end_hour - start_hour - 1))));
 
                 mPosition = startPosition;
-                    //시간표 채워줌
-                    while(mPosition <= endPosition) {
+
+                final Random mRandom = new Random(i);
+                final int baseColor = Color.WHITE;
+
+                final int baseRed = Color.red(baseColor);
+                final int baseGreen = Color.green(baseColor);
+                final int baseBlue = Color.blue(baseColor);
+
+                final int red = (baseRed + mRandom.nextInt(256)) / 2;
+                final int green = (baseGreen + mRandom.nextInt(256)) / 2;
+                final int blue = (baseBlue + mRandom.nextInt(256)) / 2;
+
+                    do {
                         if (position == mPosition) {
-                            holder.linearLayout.setBackgroundColor(colors[i]);
+                            holder.linearLayout.setBackgroundColor(Color.rgb(red, green, blue));
 
                             if (position == startPosition) {
                                 holder.textView.setText(name);
@@ -356,7 +365,8 @@ public class WeekFragment extends Fragment {
                             }
                         }
                         mPosition += 8;
-                    }
+                    } while(mPosition <= endPosition);
+
 
                 list.set(startPosition, String.valueOf(i));
 

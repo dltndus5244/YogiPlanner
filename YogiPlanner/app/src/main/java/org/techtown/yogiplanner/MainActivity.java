@@ -145,14 +145,18 @@ public class MainActivity extends AppCompatActivity {
         createRepeatTable();
         createTimeTable();
 
-//        Log.d("MainActivity", "확인");
-//        executeScheduleQuery();
-//        executeTodoQuery();
-//        executeRepeatQuery();
-//        executeTimeQuery();
+        /*Log.d("MainActivity", "확인");
+        executeScheduleQuery();
+        //executeTodoQuery();
+        executeRepeatQuery();
+        //executeTimeQuery();*/
 
         assignTodo();
         notification();
+
+//        database.execSQL("DELETE FROM schedule");
+//        database.execSQL("DELETE FROM todo");
+//        database.execSQL("DELETE FROM repeat");
 
     }
 
@@ -277,8 +281,29 @@ public class MainActivity extends AppCompatActivity {
 
         // ★ 여기부터 추가함
         String what_is_last_date = "SELECT * FROM todo ORDER BY date desc LIMIT 1";//할일의 마지막 마감일 = item2.getDate() [Todo]
-        ArrayList<Todo> items = selectTodo(what_is_last_date);
-        Todo item = items.get(0);
+//        ArrayList<Todo> items = selectTodo(what_is_last_date);
+////        Todo item = items.get(0);
+
+        Todo item = null;
+
+        try {
+            Cursor cursor = database.rawQuery(what_is_last_date, null);
+            cursor.moveToNext();
+
+            int c_id = cursor.getInt(0);
+            String c_name = cursor.getString(1);
+            String c_date = cursor.getString(2);
+            String c_time = cursor.getString(3);
+            String c_req_time = cursor.getString(4);
+            String c_memo = cursor.getString(5);
+            float c_priority = cursor.getFloat(6);
+
+            item = new Todo(c_id, c_name, c_date, c_time, c_req_time, c_memo, c_priority);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
         String last_date = item.getDate(); //마지막마감일
 
         if(last_date.compareTo(date) != 1){    //'가장 늦은 마감일 =< 새로 입력된 마감일'일 경우
@@ -1000,6 +1025,7 @@ public class MainActivity extends AppCompatActivity {
         notification();
     }
 
+
     /*
     반복일정 추가 함수
     사용: AddScheduleFragment, insertTodoRecord 함수
@@ -1021,6 +1047,7 @@ public class MainActivity extends AppCompatActivity {
         }
         Log.d("MainActivity", "라스트데이트: " + last_date);
 
+        executeRepeatQuery();
         for (int i = 0; i < len; i++) {   //리핏테이블의 모든 일정들 체크,,,,비효율적인디..?
             Repeat item = items.get(i);
             if (item.getStart_date().compareTo(last_date) >= 0) {
@@ -1029,10 +1056,43 @@ public class MainActivity extends AppCompatActivity {
 
             //만약 item.getStart_date()가 item2.getDate()보다 작으면
 
-            String sql3 = "SELECT * FROM schedule WHERE _id = '" + item.get_id() + "' ORDER BY start_date";   //반복 아닌 original 해당 일정 레코드 [Schedule], 시작일-종료일 빼고 다 받아올거임
-            ArrayList<Schedule> items3 = selectSchedule(sql3);
-            Schedule item3 = items3.get(0);
+//            String sql3 = "SELECT * FROM schedule WHERE _id = '" + item.get_id() + "' ORDER BY start_date";   //반복 아닌 original 해당 일정 레코드 [Schedule], 시작일-종료일 빼고 다 받아올거임
+//            ArrayList<Schedule> items3 = selectSchedule(sql3);
+//            Schedule item3 = items3.get(0);
             //Log.d("MainActivity", "sql3 ok");
+
+//            Log.d("MainActivity", "Repeat item : " + item.get_id() +", " + i);
+            
+            Schedule item3 = null;
+            String sql3 = "SELECT * FROM schedule WHERE _id = " + item.get_id() + " OR ori_id = " + item.get_id() + " ORDER BY start_date";
+
+            try {
+                Cursor cursor = database.rawQuery(sql3, null);
+                if (cursor == null) {
+                    item.setRenew(0);
+                    continue;
+                }
+
+                cursor.moveToNext();
+
+                int id = cursor.getInt(0);
+                String name = cursor.getString(1);
+                String location = cursor.getString(2);
+                String start_date = cursor.getString(3);
+                String start_time = cursor.getString(4);
+                String end_date = cursor.getString(5);
+                String end_time = cursor.getString(6);
+                int repeat = cursor.getInt(7);
+                String memo = cursor.getString(8);
+                int ori_id = cursor.getInt(9);//★
+
+                item3 = new Schedule(id, name, location, start_date, start_time, end_date, end_time,
+                        repeat, memo, ori_id); //★
+//                Log.d("MainActivity", "item3 이름 : " + item3.getName());
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
 
             String new_start_date = item.getStart_date();
             String new_end_date = item.getEnd_date();
