@@ -61,6 +61,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean isFabOpen = false;
 
     public static ArrayList<TimeItem> alarm_items;
+    public static ArrayList<Todo> alarm_items2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,7 +111,7 @@ public class MainActivity extends AppCompatActivity {
         fab_main.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-               toggleFab();
+                toggleFab();
             }
         });
 
@@ -152,7 +153,6 @@ public class MainActivity extends AppCompatActivity {
         //executeTimeQuery();*/
 
         assignTodo();
-        notification();
 
 //        database.execSQL("DELETE FROM schedule");
 //        database.execSQL("DELETE FROM todo");
@@ -161,7 +161,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void toggleFab() {
-        if(isFabOpen) {
+        if (isFabOpen) {
             fab_main.setImageResource(R.drawable.add);
             fab_sub1.startAnimation(fab_close);
             fab_sub2.startAnimation(fab_close);
@@ -259,14 +259,14 @@ public class MainActivity extends AppCompatActivity {
     insert 함수(schedule, Todo, Repeat, Time)
      */
     public void insertScheduleRecord(String name, String location, String start_date, String start_time,
-                             String end_date, String end_time, int repeat, String memo, int ori_id) { //★ - repeatSchedule 함수, AddScheduleFragment에서 사용
+                                     String end_date, String end_time, int repeat, String memo, int ori_id) { //★ - repeatSchedule 함수, AddScheduleFragment에서 사용
         Log.d("MainActivity", "insertRecord 실행됨");
 
         String sql = "INSERT INTO schedule"
                 + "(name, location, start_date, start_time, end_date, end_time, repeat, memo, ori_id)" //★
                 + " VALUES ( "
                 + "'" + name + "' , '" + location + "', '" + start_date + "', '" + start_time
-                + "', '" +  end_date + "', '" + end_time + "', " + repeat + " , '" + memo + "', " + ori_id + ")"; //★
+                + "', '" + end_date + "', '" + end_time + "', " + repeat + " , '" + memo + "', " + ori_id + ")"; //★
         database.execSQL(sql);
     }
 
@@ -306,7 +306,7 @@ public class MainActivity extends AppCompatActivity {
 
         String last_date = item.getDate(); //마지막마감일
 
-        if(last_date.compareTo(date) != 1){    //'가장 늦은 마감일 =< 새로 입력된 마감일'일 경우
+        if (last_date.compareTo(date) != 1) {    //'가장 늦은 마감일 =< 새로 입력된 마감일'일 경우
             //Log.d("AddToDoFragment", "일정추가된당!!!!!!!");
             repeatSchedule(1);
             repeatSchedule(2);
@@ -326,7 +326,7 @@ public class MainActivity extends AppCompatActivity {
         String sql = "INSERT INTO repeat"
                 + "(_id, repeat_type, start_date, end_date, renew)"
                 + " VALUES ( "
-                + "'" + item.get_id() + "' , '" + repeat_type + "' , '" + start_date + "', '" +  end_date + "', '" + "1" + "')";  //renew는 수정-삭제에서 설정(이 이후로 모두 삭제)
+                + "'" + item.get_id() + "' , '" + repeat_type + "' , '" + start_date + "', '" + end_date + "', '" + "1" + "')";  //renew는 수정-삭제에서 설정(이 이후로 모두 삭제)
         database.execSQL(sql);
     }
 
@@ -338,7 +338,7 @@ public class MainActivity extends AppCompatActivity {
                 + "(name, location, start_date, start_time, end_date, end_time, repeat, memo, type, item_id)"
                 + " VALUES ( "
                 + "'" + name + "' , '" + location + "', '" + start_date + "', '" + start_time
-                + "', '" +  end_date + "', '" + end_time + "', " + repeat + ", '" + memo + "', '" + type + "', " + item_id + ")";
+                + "', '" + end_date + "', '" + end_time + "', " + repeat + ", '" + memo + "', '" + type + "', " + item_id + ")";
 
         database.execSQL(sql);
         Log.d("MainActivity", "time 데이터 추가");
@@ -349,9 +349,9 @@ public class MainActivity extends AppCompatActivity {
      */
     public void executeScheduleQuery() {
         Cursor cursor = database.rawQuery("SELECT _id, name, location, start_date, start_time, " +
-                "end_date, end_time, repeat, memo, ori_id from schedule ORDER BY start_date, start_time" , null);
+                "end_date, end_time, repeat, memo, ori_id from schedule ORDER BY start_date, start_time", null);
 
-        for (int i=0; i<cursor.getCount(); i++) {
+        for (int i = 0; i < cursor.getCount(); i++) {
             cursor.moveToNext();
             int id = cursor.getInt(0);
             String name = cursor.getString(1);
@@ -372,9 +372,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void executeTodoQuery() {
         String sql = "SELECT * from todo ORDER BY date, time";
-        Cursor cursor = database.rawQuery(sql,null);
+        Cursor cursor = database.rawQuery(sql, null);
 
-        for (int i=0; i<cursor.getCount(); i++) {
+        for (int i = 0; i < cursor.getCount(); i++) {
             cursor.moveToNext();
 
             int id = cursor.getInt(0);
@@ -393,9 +393,9 @@ public class MainActivity extends AppCompatActivity {
 
     public void executeRepeatQuery() { //repeat 테이블 조회 함수(확인용) - AddScheduleFragment ★
         Cursor cursor = database.rawQuery("SELECT _id, repeat_type, start_date, end_date, renew" +
-                " from repeat ORDER BY _id" , null);
+                " from repeat ORDER BY _id", null);
 
-        for (int i=0; i<cursor.getCount(); i++) {
+        for (int i = 0; i < cursor.getCount(); i++) {
             cursor.moveToNext();
             int id = cursor.getInt(0);
             int repeat_type = cursor.getInt(1);
@@ -411,10 +411,10 @@ public class MainActivity extends AppCompatActivity {
 
     public void executeTimeQuery() {
         Log.d("MainActivity", "executeTimeQuery() 호출");
-        Cursor cursor = database.rawQuery("SELECT * from time WHERE type = 'schedule' ORDER BY start_date, start_time" , null);
+        Cursor cursor = database.rawQuery("SELECT * from time WHERE type = 'schedule' ORDER BY start_date, start_time", null);
 
         Log.d("MainActivity", "--- schedule ---");
-        for (int i=0; i<cursor.getCount(); i++) {
+        for (int i = 0; i < cursor.getCount(); i++) {
             cursor.moveToNext();
             int id = cursor.getInt(0);
             String name = cursor.getString(1);
@@ -428,14 +428,14 @@ public class MainActivity extends AppCompatActivity {
             String type = cursor.getString(9);
             String item_id = cursor.getString(10);
 
-            Log.d("MainActivity", "레코드#" + (i+1) + " : " + id + ", " + name + ", " + location + ", " + start_date + ", " +
+            Log.d("MainActivity", "레코드#" + (i + 1) + " : " + id + ", " + name + ", " + location + ", " + start_date + ", " +
                     start_time + ", " + end_date + ", " + end_time + ", " + repeat + ", " + memo + ", " + type + ", " + item_id);
         }
 
-        cursor = database.rawQuery("SELECT * from time WHERE type = 'todo' ORDER BY start_date, start_time" , null);
+        cursor = database.rawQuery("SELECT * from time WHERE type = 'todo' ORDER BY start_date, start_time", null);
 
         Log.d("MainActivity", "--- todo ---");
-        for (int i=0; i<cursor.getCount(); i++) {
+        for (int i = 0; i < cursor.getCount(); i++) {
             cursor.moveToNext();
             int id = cursor.getInt(0);
             String name = cursor.getString(1);
@@ -449,7 +449,7 @@ public class MainActivity extends AppCompatActivity {
             String type = cursor.getString(9);
             String item_id = cursor.getString(10);
 
-            Log.d("MainActivity", "레코드#" + (i+1) + " : " + id + ", " + name + ", " + location + ", " + start_date + ", " +
+            Log.d("MainActivity", "레코드#" + (i + 1) + " : " + id + ", " + name + ", " + location + ", " + start_date + ", " +
                     start_time + ", " + end_date + ", " + end_time + ", " + repeat + ", " + memo + ", " + type + ", " + item_id);
         }
         cursor.close();
@@ -463,9 +463,9 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<Schedule> result = new ArrayList<Schedule>();
 
         try {
-            Cursor cursor = database.rawQuery(sql,null);
+            Cursor cursor = database.rawQuery(sql, null);
 
-            for (int i=0; i<cursor.getCount(); i++) {
+            for (int i = 0; i < cursor.getCount(); i++) {
                 cursor.moveToNext();
 
                 int id = cursor.getInt(0);
@@ -480,7 +480,7 @@ public class MainActivity extends AppCompatActivity {
                 int ori_id = cursor.getInt(9);//★
 
                 Schedule schedule_item = new Schedule(id, name, location, start_date, start_time, end_date, end_time,
-                                                        repeat, memo, ori_id); //★
+                        repeat, memo, ori_id); //★
                 result.add(schedule_item);
             }
         } catch (Exception e) {
@@ -495,7 +495,7 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             Cursor cursor = database.rawQuery(sql, null);
-            for (int i=0; i<cursor.getCount(); i++) {
+            for (int i = 0; i < cursor.getCount(); i++) {
                 cursor.moveToNext();
 
                 int id = cursor.getInt(0);
@@ -520,9 +520,9 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<Repeat> result = new ArrayList<Repeat>();
 
         try {
-            Cursor cursor = database.rawQuery(sql,null);
+            Cursor cursor = database.rawQuery(sql, null);
 
-            for (int i=0; i<cursor.getCount(); i++) {
+            for (int i = 0; i < cursor.getCount(); i++) {
                 cursor.moveToNext();
 
                 int id = cursor.getInt(0);
@@ -546,7 +546,7 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             Cursor cursor = database.rawQuery(sql, null);
-            for (int i=0; i<cursor.getCount(); i++) {
+            for (int i = 0; i < cursor.getCount(); i++) {
                 cursor.moveToNext();
 
                 int id = cursor.getInt(0);
@@ -595,12 +595,12 @@ public class MainActivity extends AppCompatActivity {
         MonthFragment.adapter.setItems(timeItems);
         MonthFragment.recyclerView.setAdapter(MonthFragment.adapter);
 
-        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH)+1);
+        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH) + 1);
         MonthFragment.gridAdapter.notifyDataSetChanged();
     }
 
     public void updateSchedule2(int position, String dname, String dlocation, String dstart_date, String dstart_time,
-                               String dend_date, String dend_time, int drepeat, String dmemo) { //Week-ScheduleDialog2에서 사용
+                                String dend_date, String dend_time, int drepeat, String dmemo) { //Week-ScheduleDialog2에서 사용
 
         ArrayList<TimeItem> timeItems = WeekFragment.week_items;
         TimeItem timeItem = timeItems.get(position);
@@ -691,7 +691,7 @@ public class MainActivity extends AppCompatActivity {
         MonthFragment.adapter.setItems(timeItems);
         MonthFragment.recyclerView.setAdapter(MonthFragment.adapter);
 
-        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH)+1);
+        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH) + 1);
         MonthFragment.gridAdapter.notifyDataSetChanged();
     }
 
@@ -714,9 +714,10 @@ public class MainActivity extends AppCompatActivity {
         MonthFragment.adapter.setItems(timeItems);
         MonthFragment.recyclerView.setAdapter(MonthFragment.adapter);
 
-        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH)+1);
+        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH) + 1);
         MonthFragment.gridAdapter.notifyDataSetChanged();
     }
+
     public void deleteSchedule(int position, int type) { //☆ ScheduleDialog, 월간반복삭제2,3용.. 위에랑 합쳐도 되는데 매개변수 바꿔주기 귀찮아서ㅎ.ㅎ
 
         String sql = "SELECT * FROM time WHERE start_date = " + "'" + MonthFragment.click_date + "'" + " ORDER BY start_date, start_time";
@@ -731,11 +732,11 @@ public class MainActivity extends AppCompatActivity {
         //ori_id가 같고 시작날짜 같거나 뒤인 일정 삭제
         //리핏테이블 1->0
 
-        String delete_sql_after = "DELETE FROM schedule WHERE ori_id = '" + item.ori_id + "'AND start_date >= '" + item.start_date +"'";
-        String delete_sql_all = "DELETE FROM schedule WHERE ori_id = '" + item.ori_id + "'OR _id = '" + item.ori_id +"'";
+        String delete_sql_after = "DELETE FROM schedule WHERE ori_id = '" + item.ori_id + "'AND start_date >= '" + item.start_date + "'";
+        String delete_sql_all = "DELETE FROM schedule WHERE ori_id = '" + item.ori_id + "'OR _id = '" + item.ori_id + "'";
         String update_renew = "UPDATE repeat SET renew = 0 WHERE _id ='" + item.ori_id + "'";
-        if(type == 2) database.execSQL(delete_sql_after);
-        else if(type == 3) database.execSQL(delete_sql_all);
+        if (type == 2) database.execSQL(delete_sql_after);
+        else if (type == 3) database.execSQL(delete_sql_all);
         database.execSQL(update_renew);
 
         assignTodo();
@@ -743,7 +744,7 @@ public class MainActivity extends AppCompatActivity {
         MonthFragment.adapter.setItems(timeItems);
         MonthFragment.recyclerView.setAdapter(MonthFragment.adapter);
 
-        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH)+1);
+        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH) + 1);
         MonthFragment.gridAdapter.notifyDataSetChanged();
     }
 
@@ -777,11 +778,11 @@ public class MainActivity extends AppCompatActivity {
         //ori_id가 같고 시작날짜 같거나 뒤인 일정 삭제
         //리핏테이블 1->0
 
-        String delete_sql_after = "DELETE FROM schedule WHERE ori_id = '" + item.ori_id + "'AND start_date >= '" + item.start_date +"'";
-        String delete_sql_all = "DELETE FROM schedule WHERE ori_id = '" + item.ori_id + "'OR _id = '" + item.ori_id +"'";
+        String delete_sql_after = "DELETE FROM schedule WHERE ori_id = '" + item.ori_id + "'AND start_date >= '" + item.start_date + "'";
+        String delete_sql_all = "DELETE FROM schedule WHERE ori_id = '" + item.ori_id + "'OR _id = '" + item.ori_id + "'";
         String update_renew = "UPDATE repeat SET renew = 0 WHERE _id ='" + item.ori_id + "'";
-        if(type == 2) database.execSQL(delete_sql_after);
-        else if(type == 3) database.execSQL(delete_sql_all);
+        if (type == 2) database.execSQL(delete_sql_after);
+        else if (type == 3) database.execSQL(delete_sql_all);
         database.execSQL(update_renew);
 
         assignTodo();
@@ -844,7 +845,7 @@ public class MainActivity extends AppCompatActivity {
         MonthFragment.adapter.setItems(timeItems);
         MonthFragment.recyclerView.setAdapter(MonthFragment.adapter);
 
-        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH)+1);
+        monthFragment.setCalendarDate(MonthFragment.mCal.get(Calendar.MONTH) + 1);
         MonthFragment.gridAdapter.notifyDataSetChanged();
     }
 
@@ -863,7 +864,7 @@ public class MainActivity extends AppCompatActivity {
 
         // 일정을 불러오고 time테이블에 우선 할당
         Cursor cursor = database.rawQuery("SELECT * from schedule ORDER BY start_date, start_time", null);
-        for(int i=0; i<cursor.getCount(); i++){
+        for (int i = 0; i < cursor.getCount(); i++) {
             cursor.moveToNext();
             insertTimeRecord(cursor.getString(1), cursor.getString(2), cursor.getString(3), cursor.getString(4), cursor.getString(5),
                     cursor.getString(6), cursor.getInt(7), cursor.getString(8), "schedule", cursor.getInt(0));
@@ -873,34 +874,34 @@ public class MainActivity extends AppCompatActivity {
         // 할 일 불러오기
         LinkedList<Todo> todos = new LinkedList<Todo>();
         cursor = database.rawQuery("SELECT * from todo " +
-                "WHERE (date = '"+ today+ "' AND time >= '" + now + "') " +
+                "WHERE (date = '" + today + "' AND time >= '" + now + "') " +
                 "OR date > '" + today + "' " +
-                "ORDER BY priority, date, time",null);
+                "ORDER BY priority, date, time", null);
         Log.d("MainActivity", "todo | No | name | date | time | require_time | memo | priority");
-        for (int i=0; i<cursor.getCount(); i++) {
+        for (int i = 0; i < cursor.getCount(); i++) {
             cursor.moveToNext();
             Todo todo_item = new Todo(cursor.getInt(0), cursor.getString(1), cursor.getString(2), cursor.getString(3),
                     cursor.getString(4), cursor.getString(5), cursor.getFloat(6));
             todos.add(todo_item); // 할 일들을 우선순위 값 순서대로 배열에 저장
 
-            Log.d("MainActivity", "레코드#" + (i+1) + " : " + todo_item._id + ", " + todo_item.name + ", " + todo_item.date + ", " +
+            Log.d("MainActivity", "레코드#" + (i + 1) + " : " + todo_item._id + ", " + todo_item.name + ", " + todo_item.date + ", " +
                     todo_item.time + ", " + todo_item.req_time + ", " + todo_item.memo + ", " + todo_item.priority);
         }
         cursor.close();
 
         // 할 일들을 여유시간에 할당
-        while(!todos.isEmpty()){
+        while (!todos.isEmpty()) {
             Todo it = todos.poll();
             // time에 먼저 할당된 일정들을 할 일의 마감 전까지의 일정만 불러와서 timeblocks 배열에 일정 사이의 여유시간을 저장
             cursor = database.rawQuery("SELECT * from time " +
                     "WHERE (end_date < '" + it.date + "' OR (end_date = '" + it.date + "' AND end_time < '" + it.time + "')) " +
-                    "AND ((start_date = '"+ today+ "' AND end_time >= '" + now + "') OR start_date > '" + today + "') " +
-                    "ORDER BY start_date, start_time",null);
+                    "AND ((start_date = '" + today + "' AND end_time >= '" + now + "') OR start_date > '" + today + "') " +
+                    "ORDER BY start_date, start_time", null);
             cursor.moveToNext();
 
-            if(cursor.getCount() == 0){ // 현재시간부터 할 일 마감 전까지 일정이 없으면 마감 전까지의 시간을 다 여유시간으로 계산
-                int start = Integer.parseInt(now.substring(0,2));
-                if(Integer.parseInt(now.substring(3, 5)) > 0)
+            if (cursor.getCount() == 0) { // 현재시간부터 할 일 마감 전까지 일정이 없으면 마감 전까지의 시간을 다 여유시간으로 계산
+                int start = Integer.parseInt(now.substring(0, 2));
+                if (Integer.parseInt(now.substring(3, 5)) > 0)
                     start++;
                 ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, String.format("%02d", start) + ":00", it.date, it.time.substring(0, 2) + ":00"));
                 timeBlocks.add(spareTime);
@@ -935,11 +936,11 @@ public class MainActivity extends AppCompatActivity {
             cursor.close();
 
             // 여유시간들을 08:00~23:00 사이의 값으로 분할 및 여유시간이 0인 시간블럭 삭제
-            int maxtime=0, mintime=24;
-            for(int i=0; i<timeBlocks.size(); i++){
-                if(timeBlocks.get(i).get(0).compareTo(timeBlocks.get(i).get(2)) < 0){
+            int maxtime = 0, mintime = 24;
+            for (int i = 0; i < timeBlocks.size(); i++) {
+                if (timeBlocks.get(i).get(0).compareTo(timeBlocks.get(i).get(2)) < 0) {
                     Date nextDay = null;
-                    try{
+                    try {
                         nextDay = simpleDateFormat.parse(timeBlocks.get(i).get(0));
                     } catch (ParseException e) {
                         e.printStackTrace();
@@ -952,10 +953,10 @@ public class MainActivity extends AppCompatActivity {
                     timeBlocks.get(i).remove(2);
                     timeBlocks.get(i).remove(2);
                     timeBlocks.get(i).addAll(Arrays.asList(timeBlocks.get(i).get(0), "23:00"));
-                    timeBlocks.add(i+1, spareTime);
+                    timeBlocks.add(i + 1, spareTime);
                 } else {
-                    if(timeBlocks.get(i).get(1).compareTo("08:00")<0){
-                        if(timeBlocks.get(i).get(3).compareTo("08:00")<0) {
+                    if (timeBlocks.get(i).get(1).compareTo("08:00") < 0) {
+                        if (timeBlocks.get(i).get(3).compareTo("08:00") < 0) {
                             timeBlocks.remove(i);
                             i--;
                             continue;
@@ -963,8 +964,8 @@ public class MainActivity extends AppCompatActivity {
                             timeBlocks.get(i).remove(1);
                             timeBlocks.get(i).add(1, "08:00");
                         }
-                    } else if(timeBlocks.get(i).get(3).compareTo("23:00")>0) {
-                        if(timeBlocks.get(i).get(1).compareTo("23:00")>0) {
+                    } else if (timeBlocks.get(i).get(3).compareTo("23:00") > 0) {
+                        if (timeBlocks.get(i).get(1).compareTo("23:00") > 0) {
                             timeBlocks.remove(i);
                             i--;
                             continue;
@@ -976,9 +977,9 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 int start = Integer.parseInt(timeBlocks.get(i).get(1).substring(0, 2)), end = Integer.parseInt(timeBlocks.get(i).get(3).substring(0, 2));
-                if(Integer.parseInt(timeBlocks.get(i).get(1).substring(3, 5)) > 0)
+                if (Integer.parseInt(timeBlocks.get(i).get(1).substring(3, 5)) > 0)
                     start++;
-                if(end-start <= 0){
+                if (end - start <= 0) {
                     timeBlocks.remove(i);
                     i--;
                     continue;
@@ -986,32 +987,32 @@ public class MainActivity extends AppCompatActivity {
                 times.add(end - start);
 
                 // 여유시간의 최대 크기를 변수에 저장
-                if(maxtime < end - start)
+                if (maxtime < end - start)
                     maxtime = end - start;
                 // 여유시간의 최적 크기를 변수에 저장
                 // * 최적값 : 할일이 할당될 수 있을 만큼 큰 여유시간들 중에서 가장 작은 값, 요구시간보다는 큰 여유시간 값들 중 최소값
-                if(Integer.parseInt(it.req_time) <= end - start) {
+                if (Integer.parseInt(it.req_time) <= end - start) {
                     if (mintime > end - start)
                         mintime = end - start;
                 }
 
                 // 각 여유시간의 크기 계산후 times배열에 저장 및 저장된 여유시간을 로그로 출력
-                Log.d("MainActivity", "TimeBlock #" + (i+1) + ": " +times.get(i) + "시간 " +
+                Log.d("MainActivity", "TimeBlock #" + (i + 1) + ": " + times.get(i) + "시간 " +
                         "[" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + timeBlocks.get(i).get(3) + "]");
             }
 
-            if(Integer.parseInt(it.req_time) > maxtime) {
+            if (Integer.parseInt(it.req_time) > maxtime) {
                 int req_time = Integer.parseInt(it.req_time) - maxtime;
                 Todo todo_item = new Todo(it._id, it.name, it.date, it.time, Integer.toString(req_time), it.memo, it.priority);
                 todos.addFirst(todo_item);
-                Log.d("MainActivity", it.name + "(" + it.req_time + "시간)이 너무 커서 둘로 쪼개어 " + maxtime +"시간 만 할당하고, " + req_time + "은 다시 todo배열에 추가");
+                Log.d("MainActivity", it.name + "(" + it.req_time + "시간)이 너무 커서 둘로 쪼개어 " + maxtime + "시간 만 할당하고, " + req_time + "은 다시 todo배열에 추가");
                 it.setReq_time(Integer.toString(maxtime));
                 mintime = maxtime;
             }
-            for(int i=0; i<timeBlocks.size(); i++){
-                if(times.get(i) == mintime) {
+            for (int i = 0; i < timeBlocks.size(); i++) {
+                if (times.get(i) == mintime) {
                     int end = Integer.parseInt(timeBlocks.get(i).get(1).substring(0, 2)) + Integer.parseInt(it.req_time);
-                    Log.d("MainActivity", it.name + "을 TimeBlock #" + (i+1) + "에 할당 >> [" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + String.format("%02d", end) + ":00" + "]");
+                    Log.d("MainActivity", it.name + "을 TimeBlock #" + (i + 1) + "에 할당 >> [" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + String.format("%02d", end) + ":00" + "]");
                     insertTimeRecord(it.name, "", timeBlocks.get(i).get(0), timeBlocks.get(i).get(1), timeBlocks.get(i).get(2), String.format("%02d", end) + ":00", 0, "", "todo", it._id);
                     break;
                 }
@@ -1023,6 +1024,7 @@ public class MainActivity extends AppCompatActivity {
         }
         executeTimeQuery();
         notification();
+        notification2();
     }
 
 
@@ -1041,7 +1043,7 @@ public class MainActivity extends AppCompatActivity {
 
         String sql2 = "SELECT * FROM todo ORDER BY date desc LIMIT 1";//할일의 마지막 마감일 = item2.getDate() [Todo]
         ArrayList<Todo> items2 = selectTodo(sql2);
-        if(items2.size() != 0) {
+        if (items2.size() != 0) {
             Todo item2 = items2.get(0);
             last_date = item2.getDate(); //마지막마감일
         }
@@ -1062,7 +1064,7 @@ public class MainActivity extends AppCompatActivity {
             //Log.d("MainActivity", "sql3 ok");
 
 //            Log.d("MainActivity", "Repeat item : " + item.get_id() +", " + i);
-            
+
             Schedule item3 = null;
             String sql3 = "SELECT * FROM schedule WHERE _id = " + item.get_id() + " OR ori_id = " + item.get_id() + " ORDER BY start_date";
 
@@ -1165,20 +1167,23 @@ public class MainActivity extends AppCompatActivity {
 
         Date now = new Date();
         Date dStart = null;
+
         Calendar calendar = Calendar.getInstance();
+
         String todayDate = format2.format(now);
         String todayTime = format3.format(now);
 
         String sql = "SELECT * FROM time WHERE type = 'todo' AND (start_date = '" + todayDate + "' AND start_time >= '" + todayTime + "') " +
                 "OR (type = 'todo' AND start_date > '" + todayDate + "') ORDER BY start_date, start_time";
+
         alarm_items = selectTime(sql);
 
-        for (int i=0; i<alarm_items.size(); i++) {
-            TimeItem item = alarm_items.get(i);
-            String start = item.getStart_date().concat(item.getStart_time()).concat(":00");
-            Log.d("MainActivity", item.getName() + ", " + item.getStart_time());
+        for (int i = 0; i < alarm_items.size(); i++) {
+            TimeItem time_item = alarm_items.get(i);
+            String start = time_item.getStart_date().concat(time_item.getStart_time()).concat(":00");
 
             AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
             Intent intent = new Intent(MainActivity.this, alarmReceiver.class);
             intent.putExtra("id", i);
 
@@ -1187,6 +1192,7 @@ public class MainActivity extends AppCompatActivity {
             try {
                 dStart = format.parse(start);
                 calendar.setTime(dStart);
+
             } catch (ParseException e) {
                 e.printStackTrace();
             }
@@ -1199,5 +1205,50 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void notification2() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/ddHH:mm");
+        SimpleDateFormat format2 = new SimpleDateFormat("yyyy/MM/dd");
+        SimpleDateFormat format3 = new SimpleDateFormat("HH:mm:ss");
 
+        Date now = new Date();
+        Date dEnd = null;
+
+        Calendar calendar = Calendar.getInstance();
+
+        String todayDate = format2.format(now);
+        String todayTime = format3.format(now);
+
+        String sql = "SELECT * FROM todo WHERE (date = '" + todayDate + "' AND time >= '" + todayTime + "') " +
+                "OR date > '" + todayDate + "' ORDER BY date, time";
+        alarm_items2 = selectTodo(sql);
+
+        for (int i = 0; i < alarm_items.size(); i++) {
+            Todo todo_item = alarm_items2.get(i);
+            String end = todo_item.getDate().concat(todo_item.getTime()).concat(":00");
+
+            Log.d("MainActivity", end + "");
+            AlarmManager manager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+            Intent intent = new Intent(MainActivity.this, alarmReceiver2.class);
+            intent.putExtra("id", i);
+
+            PendingIntent sender = PendingIntent.getBroadcast(MainActivity.this, i, intent, 0);
+
+            try {
+                dEnd = format.parse(end);
+
+                calendar.setTime(dEnd);
+                calendar.add(Calendar.HOUR, -1);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                manager.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
+            } else {
+                manager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), sender);
+            }
+        }
+
+    }
 }

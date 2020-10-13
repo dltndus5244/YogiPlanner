@@ -25,5 +25,10 @@
             android:enabled="true"
             android:exported="true">
         </receiver>
+        <receiver
+            android:name=".alarmReceiver2"
+            android:enabled="true"
+            android:exported="true">
+        </receiver>
     </application>
 </manifest>
