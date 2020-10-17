@@ -7,6 +7,7 @@ import android.app.AlertDialog; //☆
 import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
@@ -15,6 +16,7 @@ import android.widget.ImageButton;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
@@ -39,7 +41,7 @@ public class ScheduleDialog2 extends Dialog { //WeekFragment에서 사용하는 
     RadioButton radioButton4;
 
     EditText memo;
-    int drepeat;
+    int r_repeat;
 
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
     SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
@@ -51,6 +53,9 @@ public class ScheduleDialog2 extends Dialog { //WeekFragment에서 사용하는 
 
     Date date;
     Date time;
+
+    Boolean exception1 = false;
+    Boolean exception2 = false;
 
     public ScheduleDialog2(@NonNull Context context) {
         super(context);
@@ -150,7 +155,7 @@ public class ScheduleDialog2 extends Dialog { //WeekFragment에서 사용하는 
                 int hour = calendar2.get(Calendar.HOUR_OF_DAY);
                 int minute = calendar2.get(Calendar.MINUTE);
 
-                TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), myTimePicker, hour, minute, false);
+                CustomTimePicker timePickerDialog = new CustomTimePicker(getContext(), myTimePicker, hour, minute, false);
                 timePickerDialog.setTitle("시작 시간");
                 timePickerDialog.show();
             }
@@ -170,7 +175,7 @@ public class ScheduleDialog2 extends Dialog { //WeekFragment에서 사용하는 
                 int hour = calendar3.get(Calendar.HOUR_OF_DAY);
                 int minute = calendar3.get(Calendar.MINUTE);
 
-                TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), myTimePicker2, hour, minute, false);
+                CustomTimePicker timePickerDialog = new CustomTimePicker(getContext(), myTimePicker2, hour, minute, false);
                 timePickerDialog.setTitle("종료 시간");
                 timePickerDialog.show();
             }
@@ -189,24 +194,70 @@ public class ScheduleDialog2 extends Dialog { //WeekFragment에서 사용하는 
         re_button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String dname = name.getText().toString();
-                String dlocation = location.getText().toString();
-                String dstart_date = start_date.getText().toString();
-                String dstart_time = start_time.getText().toString();
-                String dend_date = end_date.getText().toString();
-                String dend_time = end_time.getText().toString();
+                String r_name = name.getText().toString();
+                String r_location = location.getText().toString();
+                String r_start_date = start_date.getText().toString();
+                String r_start_time = start_time.getText().toString();
+                String r_end_date = end_date.getText().toString();
+                String r_end_time = end_time.getText().toString();
 
-                if (radioButton1.isChecked()) drepeat = 1;
-                else if (radioButton2.isChecked()) drepeat = 2;
-                else if (radioButton3.isChecked()) drepeat = 3;
-                else if (radioButton4.isChecked()) drepeat = 4;
-                else drepeat = -1;
+                if (radioButton1.isChecked()) r_repeat = 1;
+                else if (radioButton2.isChecked()) r_repeat = 2;
+                else if (radioButton3.isChecked()) r_repeat = 3;
+                else if (radioButton4.isChecked()) r_repeat = 4;
+                else r_repeat = -1;
 
-                String dmemo = memo.getText().toString();
+                String r_memo = memo.getText().toString();
 
-                ((MainActivity)MainActivity.mContext).updateSchedule2(WeekFragment.passedIndex, dname, dlocation,
-                        dstart_date, dstart_time, dend_date, dend_time, drepeat, dmemo);
-                dismiss();
+                try {
+                    Date dstart_date = simpleDateFormat.parse(r_start_date);
+                    Date dend_date = simpleDateFormat.parse(r_end_date);
+                    Date dstart_time = simpleDateFormat2.parse(r_start_time);
+                    Date dend_time = simpleDateFormat2.parse(r_end_time);
+
+                    if (dend_date.before(dstart_date)) {
+                        exception1 = true;
+                        Toast.makeText(getContext(), "날짜를 다시 입력하세요!", Toast.LENGTH_LONG).show();
+                    } else if (dend_time.before(dstart_time) || dend_time.equals(dstart_time)) {
+                        exception1 = true;
+                        Toast.makeText(getContext(), "시간을 다시 입력하세요!", Toast.LENGTH_LONG).show();
+                    } else {
+                        exception1 = false;
+                    }
+
+                    ArrayList<TimeItem> schedules = WeekFragment.week_items;
+
+                    for (int i=0; i<schedules.size(); i++) {
+                        String start_date = schedules.get(i).getStart_date();
+                        String end_date = schedules.get(i).getEnd_date();
+                        String type = schedules.get(i).getType();
+
+                        if (start_date.equals(r_start_date) && end_date.equals(r_end_date)) {
+                            if (type.equals("schedule") && i != WeekFragment.passedIndex) {
+                                Date s1 = simpleDateFormat2.parse(schedules.get(i).start_time);
+                                Date e1 = simpleDateFormat2.parse(schedules.get(i).end_time);
+                                Date s2 = dstart_time;
+                                Date e2 = dend_time;
+
+                                if ((s1.getTime() < e2.getTime()) && (s2.getTime() < e1.getTime())) {
+                                    exception2 = true;
+                                    Toast.makeText(getContext(), "해당 시간에 이미 일정이 있습니다!", Toast.LENGTH_LONG).show();
+                                    break;
+                                } else {
+                                    exception2 = false;
+                                }
+                            }
+                        }
+                    }
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+
+                if (exception1 == false && exception2 == false) {
+                    ((MainActivity)MainActivity.mContext).updateSchedule2(WeekFragment.passedIndex, r_name, r_location,
+                            r_start_date, r_start_time, r_end_date, r_end_time, r_repeat, r_memo);
+                    dismiss();
+                }
             }
         });
 
@@ -283,14 +334,30 @@ public class ScheduleDialog2 extends Dialog { //WeekFragment에서 사용하는 
         }
     };
 
-    TimePickerDialog.OnTimeSetListener myTimePicker = new TimePickerDialog.OnTimeSetListener() {
+//    TimePickerDialog.OnTimeSetListener myTimePicker = new TimePickerDialog.OnTimeSetListener() {
+//        @Override
+//        public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+//            start_time.setText(addZero(hourOfDay) + ":" + addZero(minute));
+//        }
+//    };
+//
+//    TimePickerDialog.OnTimeSetListener myTimePicker2 = new TimePickerDialog.OnTimeSetListener() {
+//        @Override
+//        public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+//            end_time.setText(addZero(hourOfDay) + ":" + addZero(minute));
+//        }
+//    };
+
+    CustomTimePicker.OnTimeSetListener myTimePicker = new CustomTimePicker.OnTimeSetListener() {
+
         @Override
         public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
             start_time.setText(addZero(hourOfDay) + ":" + addZero(minute));
         }
     };
 
-    TimePickerDialog.OnTimeSetListener myTimePicker2 = new TimePickerDialog.OnTimeSetListener() {
+    CustomTimePicker.OnTimeSetListener myTimePicker2 = new CustomTimePicker.OnTimeSetListener() {
+
         @Override
         public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
             end_time.setText(addZero(hourOfDay) + ":" + addZero(minute));

@@ -6,6 +6,7 @@ import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
 
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -103,8 +104,8 @@ public class WeekFragment extends Fragment {
                 if (timeList.get(position) != "") {
                     passedPosition = position;
                     passedIndex = Integer.parseInt(timeList.get(position));
-                    Log.d("WeekFragment", "passedPosition : " + passedPosition);
-                    Log.d("WeekFragment", "passedIndex : " + passedIndex);
+//                    Log.d("WeekFragment", "passedPosition : " + passedPosition);
+//                    Log.d("WeekFragment", "passedIndex : " + passedIndex);
 
                     TimeItem timeItem = week_items.get(passedIndex);
 
@@ -139,6 +140,7 @@ public class WeekFragment extends Fragment {
             }
         }
     }
+
 
     public void findWeekSchedule() { //주에 해당하는 스케줄 가져오기
         isTodoOwn.clear();
@@ -290,6 +292,8 @@ public class WeekFragment extends Fragment {
                 holder.imageView = convertView.findViewById(R.id.imageView);
                 holder.textView = convertView.findViewById(R.id.textView);
                 holder.linearLayout = convertView.findViewById(R.id.linearLayout);
+                holder.minute_layout1 = convertView.findViewById(R.id.minute_layout1);
+                holder.minute_layout2 = convertView.findViewById(R.id.minute_layout2);
                 convertView.setTag(holder);
 
             }
@@ -302,7 +306,9 @@ public class WeekFragment extends Fragment {
                         return false;
                     }
                 });
-                holder.linearLayout.setBackgroundColor(Color.WHITE);
+
+                holder.minute_layout1.setBackgroundColor(Color.WHITE);
+                holder.minute_layout2.setBackgroundColor(Color.WHITE);
                 holder.imageView.setImageResource(0);
             }
 
@@ -319,12 +325,17 @@ public class WeekFragment extends Fragment {
 
             for (int i=0; i<week_items.size(); i++) {
                 String name = week_items.get(i).getName();
+                if (name.length() > 5) {
+                    name = name.substring(0, 5);
+                }
 
                 String splitStartTime[] = week_items.get(i).start_time.split(":");
                 int start_hour = Integer.parseInt(splitStartTime[0]);
+                int start_minute = Integer.parseInt(splitStartTime[1]);
 
                 String splitEndTime[] = week_items.get(i).end_time.split(":");
                 int end_hour = Integer.parseInt(splitEndTime[0]);
+                int end_minute = Integer.parseInt(splitEndTime[1]);
 
                 String splitDate[] = week_items.get(i).start_date.split("/");
 
@@ -336,12 +347,21 @@ public class WeekFragment extends Fragment {
                 cal.set(year, month-1, day);
                 int dayOfWeek = cal.get(Calendar.DAY_OF_WEEK);
 
+                if (start_hour < 8) {
+                    start_hour = 8;
+                }
                 int startPosition = dayOfWeek + (8 * (start_hour - 8));
-                int endPosition = (dayOfWeek + (8 * ((start_hour - 8) + (end_hour - start_hour - 1))));
+                int endPosition;
+
+                if (end_minute == 30) {
+                    endPosition = (dayOfWeek + (8 * ((start_hour - 8) + (end_hour - start_hour))));
+                } else {
+                    endPosition = (dayOfWeek + (8 * ((start_hour - 8) + (end_hour - start_hour - 1))));
+                }
 
                 mPosition = startPosition;
 
-                final Random mRandom = new Random(i);
+                final Random mRandom = new Random(week_items.get(i).getItem_id());
                 final int baseColor = Color.WHITE;
 
                 final int baseRed = Color.red(baseColor);
@@ -352,26 +372,73 @@ public class WeekFragment extends Fragment {
                 final int green = (baseGreen + mRandom.nextInt(256)) / 2;
                 final int blue = (baseBlue + mRandom.nextInt(256)) / 2;
 
-                    do {
-                        if (position == mPosition) {
-                            holder.linearLayout.setBackgroundColor(Color.rgb(red, green, blue));
-
-                            if (position == startPosition) {
-                                holder.textView.setText(name);
-                                holder.textView.setTextSize(11);
-
-                                if (isTodoOwn.contains(String.valueOf(startPosition)))
-                                    holder.imageView.setImageResource(R.drawable.star);
+                if (startPosition == endPosition) { //30분이거나 1시간인 경우
+                    if (position == startPosition) {
+                        if (start_minute == 30) {
+                            holder.minute_layout2.setBackgroundColor(Color.rgb(red, green, blue));
+                            holder.textView.setText("");
+                        } else if (end_minute == 30) {
+                            holder.minute_layout1.setBackgroundColor(Color.rgb(red, green, blue));
+                            holder.textView.setText("");
+                        } else if (start_minute == 30 && end_minute == 30) {
+                            holder.minute_layout2.setBackgroundColor(Color.rgb(red, green, blue));
+                            int p = startPosition + 8;
+                            if (position == p) {
+                                holder.minute_layout1.setBackgroundColor(Color.rgb(red, green, blue));
                             }
+                        } else {
+                            holder.minute_layout1.setBackgroundColor(Color.rgb(red, green, blue));
+                            holder.minute_layout2.setBackgroundColor(Color.rgb(red, green, blue));
+
+                            holder.textView.setEllipsize(TextUtils.TruncateAt.END);
+                            holder.textView.setSingleLine();
+                            holder.textView.setText(name);
+                            holder.textView.setTextSize(11);
+                        }
+
+                        if (isTodoOwn.contains(String.valueOf(startPosition)))
+                            holder.imageView.setImageResource(R.drawable.star);
+                    }
+                } else { //1시간 이상인 경우
+
+                    if (position == startPosition) {
+                        if (start_minute == 30) {
+                            holder.minute_layout2.setBackgroundColor(Color.rgb(red, green, blue));
+                        } else {
+                            holder.minute_layout1.setBackgroundColor(Color.rgb(red, green, blue));
+                            holder.minute_layout2.setBackgroundColor(Color.rgb(red, green, blue));
+                        }
+
+                        holder.textView.setText(name);
+                        holder.textView.setTextSize(11);
+
+                        if (isTodoOwn.contains(String.valueOf(startPosition)))
+                            holder.imageView.setImageResource(R.drawable.star);
+                    }
+
+                    mPosition += 8;
+
+                    while(mPosition < endPosition) {
+                        if (position == mPosition) {
+                            holder.minute_layout1.setBackgroundColor(Color.rgb(red, green, blue));
+                            holder.minute_layout2.setBackgroundColor(Color.rgb(red, green, blue));
                         }
                         mPosition += 8;
-                    } while(mPosition <= endPosition);
+                    }
 
+                    if (position == endPosition) {
+                        if (end_minute == 30) {
+                            holder.minute_layout1.setBackgroundColor(Color.rgb(red, green, blue));
+                        } else {
+                            holder.minute_layout1.setBackgroundColor(Color.rgb(red, green, blue));
+                            holder.minute_layout2.setBackgroundColor(Color.rgb(red, green, blue));
+                        }
+                    }
+                }
 
                 list.set(startPosition, String.valueOf(i));
 
             }
-
 
             return convertView;
         }
@@ -381,6 +448,9 @@ public class WeekFragment extends Fragment {
         ImageView imageView;
         TextView textView;
         LinearLayout linearLayout;
+        LinearLayout minute_layout1;
+        LinearLayout minute_layout2;
+
     }
 
 }

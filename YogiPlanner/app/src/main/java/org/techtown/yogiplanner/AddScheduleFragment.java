@@ -8,6 +8,7 @@ import android.os.Bundle;
 import androidx.fragment.app.Fragment;
 
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,8 +18,11 @@ import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -46,6 +50,9 @@ public class AddScheduleFragment extends Fragment {
 
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
     SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
+
+    Boolean exception1 = false;
+    Boolean exception2 = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -92,7 +99,7 @@ public class AddScheduleFragment extends Fragment {
 
         // 시간 선택 창
         calendar1 = Calendar.getInstance();
-        start_time.setText(simpleDateFormat2.format(calendar1.getTime()));
+        start_time.setText(calendar1.get(Calendar.HOUR_OF_DAY) + ":00");
 
         start_time.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -100,15 +107,16 @@ public class AddScheduleFragment extends Fragment {
                 int hour = calendar1.get(Calendar.HOUR_OF_DAY);
                 int minute = calendar1.get(Calendar.MINUTE);
 
-                TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), myTimePicker, hour, minute, false);
+                CustomTimePicker timePickerDialog = new CustomTimePicker(getContext(), myTimePicker, hour, minute, false);
                 timePickerDialog.setTitle("시작 시간");
                 timePickerDialog.show();
+
             }
         });
 
         calendar2 = Calendar.getInstance();
-        calendar2.add(Calendar.HOUR, 1);
-        end_time.setText(simpleDateFormat2.format(calendar2.getTime()));
+        calendar2.add(Calendar.HOUR_OF_DAY, 1);
+        end_time.setText(calendar2.get(Calendar.HOUR_OF_DAY) + ":00");
 
         end_time.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -116,7 +124,7 @@ public class AddScheduleFragment extends Fragment {
                 int hour = calendar2.get(Calendar.HOUR_OF_DAY);
                 int minute = calendar2.get(Calendar.MINUTE);
 
-                TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), myTimePicker2, hour, minute, false);
+                CustomTimePicker timePickerDialog = new CustomTimePicker(getContext(), myTimePicker2, hour, minute, false);
                 timePickerDialog.setTitle("종료 시간");
                 timePickerDialog.show();
             }
@@ -144,21 +152,60 @@ public class AddScheduleFragment extends Fragment {
 
                 String _memo = memo.getText().toString();
 
+                /*
+                1. 입력날짜, 입력시간 예외처리
+                2. 추가하려는 시간에 이미 일정이 있을 경우 추가 안되게
+                 */
+                try {
+                    Date dstart_date = simpleDateFormat.parse(_start_date);
+                    Date dend_date = simpleDateFormat.parse(_end_date);
+                    Date dstart_time = simpleDateFormat2.parse(_start_time);
+                    Date dend_time = simpleDateFormat2.parse(_end_time);
 
-                ((MainActivity)getActivity()).insertScheduleRecord(_name, _location, _start_date, _start_time,
-                        _end_date, _end_time, _repeat, _memo, 0); //★ ori_id에 0 넣기 추가
+                    if (dend_date.before(dstart_date)) {
+                        exception1 = true;
+                        Toast.makeText(getContext(), "날짜를 다시 입력하세요!", Toast.LENGTH_LONG).show();
+                    } else if (dend_time.before(dstart_time) || dend_time.equals(dstart_time)) {
+                        exception1 = true;
+                        Toast.makeText(getContext(), "시간을 다시 입력하세요!", Toast.LENGTH_LONG).show();
+                    } else {
+                        exception1 = false;
+                    }
 
-                if(_repeat ==  2 || _repeat == 3 || _repeat == 4){   //반복할경우 repeat table에 data 넣어주는 역할 ★
-                    ((MainActivity)getActivity()).insertRepeatRecord(_repeat, _start_date, _end_date);
-                    ((MainActivity)getActivity()).repeatSchedule(_repeat);
-                    /*Log.d("MainActivity", "---------------바뀐일정--------------");
-                    ((MainActivity)getActivity()).executeScheduleQuery(); //Schedule Table 내용 보기
-                    Log.d("MainActivity", "---------------바뀐리핏--------------");
-                    ((MainActivity)getActivity()).executeRepeatQuery(); //Repeat Table 내용 보기*/
+                    String sql = "SELECT * FROM schedule WHERE start_date = '" + _start_date + "'";
+                    ArrayList<Schedule> schedules = ((MainActivity)getActivity()).selectSchedule(sql);
+
+                    for (int i=0; i<schedules.size(); i++) {
+                        Date s1 = simpleDateFormat2.parse(schedules.get(i).start_time);
+                        Date e1 = simpleDateFormat2.parse(schedules.get(i).end_time);
+
+                        Date s2 = dstart_time;
+                        Date e2 = dend_time;
+
+                        if ((s1.getTime() < e2.getTime()) && (s2.getTime() < e1.getTime())) {
+                            exception2 = true;
+                            Toast.makeText(getContext(), "해당 시간에 이미 일정이 있습니다!", Toast.LENGTH_LONG).show();
+                            break;
+                        } else {
+                            exception2 = false;
+                        }
+                    }
+                } catch (ParseException e) {
+                    e.printStackTrace();
                 }
 
-                ((MainActivity)getActivity()).assignTodo();
-                clearText();
+                if (exception1 == false && exception2 == false) {
+                    ((MainActivity)getActivity()).insertScheduleRecord(_name, _location, _start_date, _start_time,
+                                _end_date, _end_time, _repeat, _memo, 0);
+
+                    if(_repeat ==  2 || _repeat == 3 || _repeat == 4){
+                        ((MainActivity)getActivity()).insertRepeatRecord(_repeat, _start_date, _end_date);
+                        ((MainActivity)getActivity()).repeatSchedule(_repeat);
+                    }
+
+                    ((MainActivity)getActivity()).assignTodo();
+                    clearText();
+                }
             }
         });
 
@@ -199,14 +246,16 @@ public class AddScheduleFragment extends Fragment {
         }
     };
 
-    TimePickerDialog.OnTimeSetListener myTimePicker = new TimePickerDialog.OnTimeSetListener() {
+    CustomTimePicker.OnTimeSetListener myTimePicker = new CustomTimePicker.OnTimeSetListener() {
+
         @Override
         public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
             start_time.setText(addZero(hourOfDay) + ":" + addZero(minute));
         }
     };
 
-    TimePickerDialog.OnTimeSetListener myTimePicker2 = new TimePickerDialog.OnTimeSetListener() {
+    CustomTimePicker.OnTimeSetListener myTimePicker2 = new CustomTimePicker.OnTimeSetListener() {
+
         @Override
         public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
             end_time.setText(addZero(hourOfDay) + ":" + addZero(minute));
@@ -217,7 +266,9 @@ public class AddScheduleFragment extends Fragment {
         name.setText(null);
         location.setText(null);
         start_date.setText(simpleDateFormat.format(calendar.getTime()));
-        end_time.setText(simpleDateFormat2.format(calendar1.getTime()));
+        end_date.setText(simpleDateFormat.format(calendar.getTime()));
+        start_time.setText(calendar1.get(Calendar.HOUR_OF_DAY) + ":00");
+        end_time.setText(calendar2.get(Calendar.HOUR_OF_DAY) + ":00");
         rg.clearCheck();
         memo.setText(null);
     }

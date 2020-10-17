@@ -118,7 +118,8 @@ public class TodoDialog2 extends Dialog { //WeekFragment에서 사용하는 Todo
                 int hour = calendar1.get(Calendar.HOUR_OF_DAY);
                 int minute = calendar1.get(Calendar.MINUTE);
 
-                TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), myTimePicker, hour, minute, false);
+//                TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), myTimePicker, hour, minute, false);
+                CustomTimePicker timePickerDialog = new CustomTimePicker(getContext(), myTimePicker, hour, minute, false);
                 timePickerDialog.show();
             }
         });
@@ -173,7 +174,15 @@ public class TodoDialog2 extends Dialog { //WeekFragment에서 사용하는 Todo
         }
     };
 
-    TimePickerDialog.OnTimeSetListener myTimePicker = new TimePickerDialog.OnTimeSetListener() {
+//    TimePickerDialog.OnTimeSetListener myTimePicker = new TimePickerDialog.OnTimeSetListener() {
+//        @Override
+//        public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+//            due_time.setText(addZero(hourOfDay) + ":" + addZero(minute));
+//        }
+//    };
+
+    CustomTimePicker.OnTimeSetListener myTimePicker = new CustomTimePicker.OnTimeSetListener() {
+
         @Override
         public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
             due_time.setText(addZero(hourOfDay) + ":" + addZero(minute));

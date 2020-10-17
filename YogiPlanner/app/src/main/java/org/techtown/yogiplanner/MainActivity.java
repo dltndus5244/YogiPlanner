@@ -268,7 +268,12 @@ public class MainActivity extends AppCompatActivity {
                 + "'" + name + "' , '" + location + "', '" + start_date + "', '" + start_time
                 + "', '" + end_date + "', '" + end_time + "', " + repeat + " , '" + memo + "', " + ori_id + ")"; //★
         database.execSQL(sql);
+
+
     }
+
+
+
 
     public void insertTodoRecord(String name, String date, String time, String req_time, String memo, float priority) {
         String sql = "INSERT INTO todo"
@@ -1222,7 +1227,7 @@ public class MainActivity extends AppCompatActivity {
                 "OR date > '" + todayDate + "' ORDER BY date, time";
         alarm_items2 = selectTodo(sql);
 
-        for (int i = 0; i < alarm_items.size(); i++) {
+        for (int i = 0; i < alarm_items2.size(); i++) {
             Todo todo_item = alarm_items2.get(i);
             String end = todo_item.getDate().concat(todo_item.getTime()).concat(":00");
 

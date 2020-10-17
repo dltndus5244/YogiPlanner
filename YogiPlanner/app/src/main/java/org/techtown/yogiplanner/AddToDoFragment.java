@@ -60,7 +60,7 @@ public class AddToDoFragment extends Fragment {
 
         // 시간 선택 창
         calendar1 = Calendar.getInstance();
-        time.setText(simpleDateFormat2.format(calendar1.getTime()));
+        time.setText(calendar1.get(Calendar.HOUR_OF_DAY)+":00");
 
         time.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -68,7 +68,7 @@ public class AddToDoFragment extends Fragment {
                 int hour = calendar1.get(Calendar.HOUR_OF_DAY);
                 int minute = calendar1.get(Calendar.MINUTE);
 
-                TimePickerDialog timePickerDialog = new TimePickerDialog(getContext(), myTimePicker, hour, minute, false);
+                CustomTimePicker timePickerDialog = new CustomTimePicker(getContext(), myTimePicker, hour, minute, false);
                 timePickerDialog.show();
             }
         });
@@ -178,13 +178,14 @@ public class AddToDoFragment extends Fragment {
         }
     };
 
+    CustomTimePicker.OnTimeSetListener myTimePicker = new CustomTimePicker.OnTimeSetListener() {
 
-    TimePickerDialog.OnTimeSetListener myTimePicker = new TimePickerDialog.OnTimeSetListener() {
         @Override
         public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
             time.setText(addZero(hourOfDay) + ":" + addZero(minute));
         }
     };
+
 
     public void clearText() {
         name.setText(null);
