@@ -210,19 +210,12 @@
 
         <Button
             android:id="@+id/add_button"
-            android:layout_width="90dp"
+            android:layout_width="300dp"
             android:layout_height="45dp"
-            android:layout_marginRight="50dp"
             android:background="@drawable/button"
-            android:text="추가"
+            android:text="일정 추가"
             android:textColor="#000000" />
 
-        <Button
-            android:id="@+id/close_button"
-            android:layout_width="90dp"
-            android:layout_height="45dp"
-            android:background="@drawable/button"
-            android:text="취소" />
     </LinearLayout>
 
 </LinearLayout>

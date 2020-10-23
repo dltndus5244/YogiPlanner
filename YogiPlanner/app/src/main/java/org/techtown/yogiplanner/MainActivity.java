@@ -17,7 +17,6 @@ import android.text.format.DateFormat;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewDebug;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Toast;
@@ -863,7 +862,7 @@ public class MainActivity extends AppCompatActivity {
         database.execSQL("DELETE FROM time");
         SimpleDateFormat DateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm");
         LinkedList<ArrayList<String>> timeBlocks = new LinkedList<ArrayList<String>>();
-        LinkedList<Float> times = new LinkedList<Float>();
+        LinkedList<Integer> times = new LinkedList<Integer>();
         LinkedHashMap<Integer, LinkedList<ArrayList<String>>> spareTimes = new LinkedHashMap<Integer, LinkedList<ArrayList<String>>>();
         Date dToday = new Date(System.currentTimeMillis());
         String today = simpleDateFormat.format(dToday), now = simpleDateFormat2.format(dToday);
@@ -900,49 +899,49 @@ public class MainActivity extends AppCompatActivity {
             Todo it = todos.poll();
             // time에 먼저 할당된 일정들을 할 일의 마감 전까지의 일정만 불러와서 timeblocks 배열에 일정 사이의 여유시간을 저장
             cursor = database.rawQuery("SELECT * from time " +
-                    "WHERE (end_date < '" + it.date + "' OR (end_date = '" + it.date + "' AND end_time <= '" + it.time + "')) " +
+                    "WHERE (end_date < '" + it.date + "' OR (end_date = '" + it.date + "' AND end_time < '" + it.time + "')) " +
                     "AND ((start_date = '" + today + "' AND end_time >= '" + now + "') OR start_date > '" + today + "') " +
                     "ORDER BY start_date, start_time", null);
             cursor.moveToNext();
 
             if (cursor.getCount() == 0) { // 현재시간부터 할 일 마감 전까지 일정이 없으면 마감 전까지의 시간을 다 여유시간으로 계산
                 int start = Integer.parseInt(now.substring(0, 2));
-                String minute = "00";
-                if (Integer.parseInt(now.substring(3, 5)) > 30)
+                if (Integer.parseInt(now.substring(3, 5)) > 0)
                     start++;
-                else if(Integer.parseInt(now.substring(3, 5)) > 0)
-                    minute = "30";
-                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, String.format("%02d", start) + ":" + minute, it.date, it.time));
+                ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, String.format("%02d", start) + ":00", it.date, it.time.substring(0, 2) + ":00"));
                 timeBlocks.add(spareTime);
             } else {
                 // 첫 번째 일정과 현재 시간 사이의 여유시간 계산
                 if ((today.compareTo(cursor.getString(3)) == 0 && Integer.parseInt(now.substring(0, 2)) < Integer.parseInt(cursor.getString(4).substring(0, 2))) || today.compareTo(cursor.getString(3)) < 0) {
                     int start = Integer.parseInt(now.substring(0, 2));
-                    String minute = "00";
-                    if (Integer.parseInt(now.substring(3, 5)) > 30)
+                    if (Integer.parseInt(now.substring(3, 5)) > 0)
                         start++;
-                    else if(Integer.parseInt(now.substring(3, 5)) > 0)
-                        minute = "30";
-                    ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, String.format("%02d", start) + ":" + minute, cursor.getString(3), cursor.getString(4)));
+                    ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(today, String.format("%02d", start) + ":00", cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
                     timeBlocks.add(spareTime);
                 }
                 // 일정들 사이의 여유시간 계산
                 for (int i = 1; i < cursor.getCount(); i++) {
-                    ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), cursor.getString(6))); // 이전 스케줄의 날짜, 끝시간을 여유시간 블럭에 저장.
+                    int start = Integer.parseInt(cursor.getString(6).substring(0, 2));
+                    if (Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
+                        start++;
+                    ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), String.format("%02d", start) + ":00")); // 이전 스케줄의 날짜, 끝시간을 여유시간 블럭에 저장.
                     cursor.moveToNext();
-                    spareTime.addAll(Arrays.asList(cursor.getString(3), cursor.getString(4)));
+                    spareTime.addAll(Arrays.asList(cursor.getString(3), cursor.getString(4).substring(0, 2) + ":00"));
                     timeBlocks.add(spareTime);
                 }
                 // 마지막 일정과 할 일의 마감시간 사이의 여유시간 계산
                 if ((it.date.compareTo(cursor.getString(3)) == 0 && it.time.compareTo(cursor.getString(4)) > 0) || it.date.compareTo(cursor.getString(3)) > 0) {
-                    ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), cursor.getString(6), it.date, it.time));
+                    int start = Integer.parseInt(cursor.getString(6).substring(0, 2));
+                    if (Integer.parseInt(cursor.getString(6).substring(3, 5)) > 0)
+                        start++;
+                    ArrayList<String> spareTime = new ArrayList<String>(Arrays.asList(cursor.getString(5), String.format("%02d", start) + ":00", it.date, it.time.substring(0, 2) + ":00"));
                     timeBlocks.add(spareTime);
                 }
             }
             cursor.close();
 
             // 여유시간들을 08:00~23:00 사이의 값으로 분할 및 여유시간이 0인 시간블럭 삭제
-            float maxtime = 0, mintime = 24;
+            int maxtime = 0, mintime = 24;
             for (int i = 0; i < timeBlocks.size(); i++) {
                 if (timeBlocks.get(i).get(0).compareTo(timeBlocks.get(i).get(2)) < 0) {
                     Date nextDay = null;
@@ -982,12 +981,10 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
 
-                float start = Float.parseFloat(timeBlocks.get(i).get(1).substring(0, 2)), end = Float.parseFloat(timeBlocks.get(i).get(3).substring(0, 2));
-                if(Integer.parseInt(timeBlocks.get(i).get(1).substring(3, 5)) == 30)
-                    start += 0.5;
-                if (Integer.parseInt(timeBlocks.get(i).get(3).substring(3, 5)) == 30)
-                    end += 0.5;
-                if (end <= start) {
+                int start = Integer.parseInt(timeBlocks.get(i).get(1).substring(0, 2)), end = Integer.parseInt(timeBlocks.get(i).get(3).substring(0, 2));
+                if (Integer.parseInt(timeBlocks.get(i).get(1).substring(3, 5)) > 0)
+                    start++;
+                if (end - start <= 0) {
                     timeBlocks.remove(i);
                     i--;
                     continue;
@@ -999,7 +996,7 @@ public class MainActivity extends AppCompatActivity {
                     maxtime = end - start;
                 // 여유시간의 최적 크기를 변수에 저장
                 // * 최적값 : 할일이 할당될 수 있을 만큼 큰 여유시간들 중에서 가장 작은 값, 요구시간보다는 큰 여유시간 값들 중 최소값
-                if (Float.parseFloat(it.req_time) <= (end - start)) {
+                if (Integer.parseInt(it.req_time) <= end - start) {
                     if (mintime > end - start)
                         mintime = end - start;
                 }
@@ -1009,30 +1006,19 @@ public class MainActivity extends AppCompatActivity {
                         "[" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + timeBlocks.get(i).get(3) + "]");
             }
 
-            if (maxtime == 0.0){
-                Log.d("MainActivity", it.name + "의 마감 전까지 여유시간이 부족하여 할당 불가능");
-                continue;
-            }
-
-            if (Float.parseFloat(it.req_time) > maxtime) {
-                float req_time = Float.parseFloat(it.req_time) - maxtime;
-                Todo todo_item = new Todo(it._id, it.name, it.date, it.time, Float.toString(req_time), it.memo, it.priority);
+            if (Integer.parseInt(it.req_time) > maxtime) {
+                int req_time = Integer.parseInt(it.req_time) - maxtime;
+                Todo todo_item = new Todo(it._id, it.name, it.date, it.time, Integer.toString(req_time), it.memo, it.priority);
                 todos.addFirst(todo_item);
                 Log.d("MainActivity", it.name + "(" + it.req_time + "시간)이 너무 커서 둘로 쪼개어 " + maxtime + "시간 만 할당하고, " + req_time + "은 다시 todo배열에 추가");
-                it.setReq_time(Float.toString(maxtime));
+                it.setReq_time(Integer.toString(maxtime));
                 mintime = maxtime;
             }
             for (int i = 0; i < timeBlocks.size(); i++) {
                 if (times.get(i) == mintime) {
-                    float end = Float.parseFloat(timeBlocks.get(i).get(1).substring(0, 2));
-                    if (Integer.parseInt(timeBlocks.get(i).get(1).substring(3, 5)) == 30)
-                        end += 0.5;
-                    end += Float.parseFloat(it.req_time);
-                    String minute = "00";
-                    if(end % 1.0 > 0)
-                        minute = "30";
-                    Log.d("MainActivity", it.name + "을 TimeBlock #" + (i + 1) + "에 할당 >> [" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + String.format("%02d", (int)end) + ":00" + "]");
-                    insertTimeRecord(it.name, "", timeBlocks.get(i).get(0), timeBlocks.get(i).get(1), timeBlocks.get(i).get(2), String.format("%02d", (int)end) + ":" + minute, 0, "", "todo", it._id);
+                    int end = Integer.parseInt(timeBlocks.get(i).get(1).substring(0, 2)) + Integer.parseInt(it.req_time);
+                    Log.d("MainActivity", it.name + "을 TimeBlock #" + (i + 1) + "에 할당 >> [" + timeBlocks.get(i).get(0) + " " + timeBlocks.get(i).get(1) + " ~ " + timeBlocks.get(i).get(2) + " " + String.format("%02d", end) + ":00" + "]");
+                    insertTimeRecord(it.name, "", timeBlocks.get(i).get(0), timeBlocks.get(i).get(1), timeBlocks.get(i).get(2), String.format("%02d", end) + ":00", 0, "", "todo", it._id);
                     break;
                 }
             }

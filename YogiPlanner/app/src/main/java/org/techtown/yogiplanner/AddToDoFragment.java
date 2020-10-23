@@ -34,6 +34,8 @@ public class AddToDoFragment extends Fragment {
     SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy/MM/dd");
     SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
 
+    MonthFragment monthFragment = new MonthFragment();
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -94,15 +96,7 @@ public class AddToDoFragment extends Fragment {
                 ((MainActivity)getActivity()).assignTodo();
                 clearText();
 
-            }
-        });
-
-        // 취소 버튼 클릭 이벤트
-        Button close_button = rootView.findViewById(R.id.close_button);
-        close_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((MainActivity)getActivity()).executeTodoQuery();
+                ((MainActivity)getActivity()).replaceFragment(monthFragment);
             }
         });
 

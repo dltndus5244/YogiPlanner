@@ -2,9 +2,11 @@ package org.techtown.yogiplanner;
 
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 
 import android.provider.MediaStore;
@@ -53,6 +55,8 @@ public class AddScheduleFragment extends Fragment {
 
     Boolean exception1 = false;
     Boolean exception2 = false;
+
+    MonthFragment monthFragment = new MonthFragment();
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -205,19 +209,12 @@ public class AddScheduleFragment extends Fragment {
 
                     ((MainActivity)getActivity()).assignTodo();
                     clearText();
+
+                    ((MainActivity)getActivity()).replaceFragment(monthFragment);
                 }
             }
         });
 
-        // 취소 버튼 클릭 이벤트 (임시로 db 조회 함수)
-        Button close_button = rootView.findViewById(R.id.close_button);
-        close_button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                ((MainActivity)getActivity()).executeScheduleQuery();
-
-            }
-        });
 
         return rootView;
     }
