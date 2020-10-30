@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -199,12 +200,13 @@ public class AddScheduleFragment extends Fragment {
                 }
 
                 if (exception1 == false && exception2 == false) {
+
                     ((MainActivity)getActivity()).insertScheduleRecord(_name, _location, _start_date, _start_time,
                                 _end_date, _end_time, _repeat, _memo, 0);
 
+                    //삭제할수도 ※
                     if(_repeat ==  2 || _repeat == 3 || _repeat == 4){
-                        ((MainActivity)getActivity()).insertRepeatRecord(_repeat, _start_date, _end_date);
-                        ((MainActivity)getActivity()).repeatSchedule(_repeat);
+                        ((MainActivity)getActivity()).repeatSchedule100(_repeat);
                     }
 
                     ((MainActivity)getActivity()).assignTodo();

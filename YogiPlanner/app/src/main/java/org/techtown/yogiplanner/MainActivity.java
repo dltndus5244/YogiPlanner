@@ -136,10 +136,10 @@ public class MainActivity extends AppCompatActivity {
 
         createDatabase();
 
-//        database.execSQL("DROP TABLE schedule");
-//        database.execSQL("DROP TABLE todo");
-//        database.execSQL("DROP TABLE repeat");
-//        database.execSQL("DROP TABLE time");
+        /*database.execSQL("DROP TABLE schedule");
+        database.execSQL("DROP TABLE todo");
+        database.execSQL("DROP TABLE repeat");
+        database.execSQL("DROP TABLE time");*/
 
         createScheduleTable();
         createTodoTable();
@@ -284,6 +284,7 @@ public class MainActivity extends AppCompatActivity {
         database.execSQL(sql);
         Log.d("MainActivity", "todo 데이터 추가");
 
+        //삭제할수도 ※
         // ★ 여기부터 추가함
         String what_is_last_date = "SELECT * FROM todo ORDER BY date desc LIMIT 1";//할일의 마지막 마감일 = item2.getDate() [Todo]
 //        ArrayList<Todo> items = selectTodo(what_is_last_date);
@@ -320,10 +321,10 @@ public class MainActivity extends AppCompatActivity {
         //여기까지 ★
     }
 
-    public void insertRepeatRecord(int repeat_type, String start_date, String end_date) { //반복일정 추가 함수 - AddScheduleFragment 에서 사용★
+    public void insertRepeatRecord(int _id, int repeat_type, String start_date, String end_date) { //반복일정 추가 함수 - AddScheduleFragment 에서 사용★
         Log.d("MainActivity", "insertRepeatRecord 실행됨");
 
-        String sql1 = "SELECT * FROM schedule ORDER BY _id desc";   //맨마지막줄=방금입력된일정의 id를 받기 위함
+        /*String sql1 = "SELECT * FROM schedule ORDER BY _id desc";   //맨마지막줄=방금입력된일정의 id를 받기 위함
 
         ArrayList<Schedule> items = selectSchedule(sql1);
         Schedule item = items.get(0);   //마지막 레코드 받아옴
@@ -332,7 +333,12 @@ public class MainActivity extends AppCompatActivity {
                 + "(_id, repeat_type, start_date, end_date, renew)"
                 + " VALUES ( "
                 + "'" + item.get_id() + "' , '" + repeat_type + "' , '" + start_date + "', '" + end_date + "', '" + "1" + "')";  //renew는 수정-삭제에서 설정(이 이후로 모두 삭제)
-        database.execSQL(sql);
+        database.execSQL(sql);*/
+
+        String sql = "INSERT INTO repeat"
+                + "(_id, repeat_type, start_date, end_date, renew)"
+                + " VALUES ( "
+                + "'" + _id + "' , '" + repeat_type + "' , '" + start_date + "', '" + end_date + "', '" + "1" + "')";  //renew는 수정-삭제에서 설정(이 이후로 모두 삭제)
     }
 
     public void insertTimeRecord(String name, String location, String start_date, String start_time,
@@ -1161,6 +1167,157 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
+
+
+    public void repeatSchedule100(int repeat_type) {     //★ repeat_type 매일(2).매주(3).매월(4) - AddScheduleFragment 에서 사용
+
+        /*반복
+        일단 일정 추가하면 반복일정인지 확인
+        만약 반복일정이면 반복 타입 넣어서 이 함수 돌림
+        타입2->해당 일정 100번 반복(입력포함)
+        타입3->해당 일정 52번 반복
+        타입4->해당 일정 12번 반복
+        */
+
+        Cursor cursor = database.rawQuery("SELECT * from schedule ORDER BY _id", null);
+        cursor.moveToLast(); //방금 입력된 Schedule 첫번째 일정 레코드
+        int id = cursor.getInt(0);
+        String name = cursor.getString(1);
+        String location = cursor.getString(2);
+        String start_date = cursor.getString(3);
+        String start_time = cursor.getString(4);
+        String end_date = cursor.getString(5);
+        String end_time = cursor.getString(6);
+        int repeat = cursor.getInt(7);
+        String memo = cursor.getString(8);
+        int ori_id = cursor.getInt(9);
+
+        Schedule item_1st = new Schedule(id, name, location, start_date, start_time, end_date, end_time,
+                repeat, memo, ori_id);
+
+        String new_start_date = item_1st.getStart_date();
+        String new_end_date = item_1st.getEnd_date();
+        String inp_start_date = null, inp_end_date = null;//insertSchedule에 사용할 변수
+
+        SimpleDateFormat fm = new SimpleDateFormat("yyyy/MM/dd");
+
+        String[] splitDate = new_start_date.split("/"); //시작일 나누는거
+        int year = Integer.parseInt(splitDate[0]);
+        int month = Integer.parseInt(splitDate[1]);
+        int day = Integer.parseInt(splitDate[2]);
+
+        String[] splitDate2 = new_end_date.split("/");  //종료일 나누는거
+        int year2 = Integer.parseInt(splitDate2[0]);
+        int month2 = Integer.parseInt(splitDate2[1]);
+        int day2 = Integer.parseInt(splitDate2[2]);
+
+        Calendar cal = new GregorianCalendar(year, month - 1, day);
+        Calendar cal2 = new GregorianCalendar(year2, month2 - 1, day2);
+
+        if(repeat_type == 2){//매일반복 99개
+            for(int cnt = 1; cnt<100; cnt++){
+                cal.add(Calendar.DAY_OF_MONTH, 1);
+                cal2.add(Calendar.DAY_OF_MONTH, 1);
+//                cal.add(Calendar.DAY_OF_MONTH, cnt); //일단 너무 느려서...
+//                cal2.add(Calendar.DAY_OF_MONTH, cnt);
+
+                inp_start_date = fm.format(cal.getTime());
+                inp_end_date = fm.format(cal2.getTime());
+
+                insertScheduleRecord(item_1st.getName(), item_1st.getLocation(), inp_start_date, item_1st.getStart_time(),
+                        inp_end_date, item_1st.getEnd_time(), repeat_type, item_1st.getMemo(), item_1st.getOri_id());
+
+//                cal.add(Calendar.DAY_OF_MONTH, -cnt);
+//                cal2.add(Calendar.DAY_OF_MONTH, -cnt);
+            }
+        }
+
+        if(repeat_type == 3){//매주반복 51개
+            for(int cnt = 1; cnt<52; cnt++){
+                cal.add(Calendar.DAY_OF_MONTH, 7);
+                cal2.add(Calendar.DAY_OF_MONTH, 7);
+//                cal.add(Calendar.DAY_OF_MONTH, cnt*7);
+//                cal2.add(Calendar.DAY_OF_MONTH, cnt*7);
+
+                inp_start_date = fm.format(cal.getTime());
+                inp_end_date = fm.format(cal2.getTime());
+
+                insertScheduleRecord(item_1st.getName(), item_1st.getLocation(), inp_start_date, item_1st.getStart_time(),
+                        inp_end_date, item_1st.getEnd_time(), repeat_type, item_1st.getMemo(), item_1st.getOri_id());
+
+//                cal.add(Calendar.DAY_OF_MONTH, -cnt*7);
+//                cal2.add(Calendar.DAY_OF_MONTH, -cnt*7);
+            }
+        }
+
+        if(repeat_type == 4){//매월반복 11개
+            for(int cnt = 1; cnt<12; cnt++){
+                int firstdate = cal.getActualMaximum(Calendar.DATE);
+                int firstdate2 = cal2.getActualMaximum(Calendar.DATE);
+                cal.add(Calendar.MONTH, cnt);
+                cal2.add(Calendar.MONTH, cnt);
+
+//                Calendar cal3 = cal;
+//                Calendar cal4 = cal2;
+
+                int lastdate = cal.getActualMaximum(Calendar.DATE); //변경된 달의 마지막 날
+                int lastdate2 = cal2.getActualMaximum(Calendar.DATE); //변경된 달의 마지막 날
+
+                if(firstdate>lastdate || firstdate2>lastdate2) {
+                    cal = new GregorianCalendar(year, month - 1, day);
+                    cal2 = new GregorianCalendar(year2, month2 - 1, day2);
+                    continue;
+                }
+
+                inp_start_date = fm.format(cal.getTime());
+                inp_end_date = fm.format(cal2.getTime());
+
+                insertScheduleRecord(item_1st.getName(), item_1st.getLocation(), inp_start_date, item_1st.getStart_time(),
+                        inp_end_date, item_1st.getEnd_time(), repeat_type, item_1st.getMemo(), item_1st.getOri_id());
+
+                cal = new GregorianCalendar(year, month - 1, day);
+                cal2 = new GregorianCalendar(year2, month2 - 1, day2);
+            }
+        }
+
+        insertRepeatRecord(item_1st.get_id(), repeat_type, inp_start_date, inp_end_date); //추가된 상태여유유
+
+    }
+
+    public void repeatSchedule_start(){ //앱 시작할 때 리핏 일정 갯수 유지하는 함수
+        /* 수정중
+        어플을 켤 때마다 오늘 날짜 체크(갱신은 늘 최종시작날짜+다음날짜부터 추가)
+        반복 테이블 모두 체크{
+            일정 테이블에 ori_id = 반복테이블레코드i_id && 시작날짜>=오늘날짜인 일정 갯수 체크
+            만약 100/52/12개 이하면 그만큼 추가
+        }
+        or
+        { 이걸로 가자!!!!!!!
+            만약 반복테이블레코드i의 최종 시작 날짜<(오늘 날짜+100/365/12달)
+            반복테이블레코드i의 최종 시작 날짜<(오늘 날짜+100/365/12달)까지 일정에 추가, 반복 시작 날짜 갱신(최종 시작 날짜 제외하고 추가)
+        }
+         */
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd");
+        String date = format.format(Calendar.getInstance().getTime());
+
+        //이거 삭제할 듯....
+        try {
+            Cursor cursor = database.rawQuery("SELECT * FROM repeat", null);
+            Cursor cursor2 = database.rawQuery("SELECT * FROM schedule WHERE ", null);
+
+
+            for (int i = 0; i < cursor.getCount(); i++) {
+                cursor.moveToNext();
+                int r_id = cursor.getInt(0);
+            }
+            cursor.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+   }
 
     /*
 할 일 알림 함수 - 할 일의 시작 시간이 되면 상단바 알림
