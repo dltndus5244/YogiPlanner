@@ -268,12 +268,7 @@ public class MainActivity extends AppCompatActivity {
                 + "'" + name + "' , '" + location + "', '" + start_date + "', '" + start_time
                 + "', '" + end_date + "', '" + end_time + "', " + repeat + " , '" + memo + "', " + ori_id + ")"; //★
         database.execSQL(sql);
-
-
     }
-
-
-
 
     public void insertTodoRecord(String name, String date, String time, String req_time, String memo, float priority) {
         String sql = "INSERT INTO todo"
@@ -284,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
         database.execSQL(sql);
         Log.d("MainActivity", "todo 데이터 추가");
 
-        //삭제할수도 ※
+/*        //삭제할수도 ※
         // ★ 여기부터 추가함
         String what_is_last_date = "SELECT * FROM todo ORDER BY date desc LIMIT 1";//할일의 마지막 마감일 = item2.getDate() [Todo]
 //        ArrayList<Todo> items = selectTodo(what_is_last_date);
@@ -293,7 +288,7 @@ public class MainActivity extends AppCompatActivity {
         Todo item = null;
 
         try {
-            Cursor cursor = database.rawQuery(what_is_last_date, null);
+            Cursor cursor = database.rawQuery("SELECT * FROM todo ORDER BY date desc LIMIT 1", null);
             cursor.moveToNext();
 
             int c_id = cursor.getInt(0);
@@ -318,10 +313,10 @@ public class MainActivity extends AppCompatActivity {
             repeatSchedule(2);
             repeatSchedule(3);
         }
-        //여기까지 ★
+        //여기까지 ★*/
     }
 
-    public void insertRepeatRecord(int _id, int repeat_type, String start_date, String end_date) { //반복일정 추가 함수 - AddScheduleFragment 에서 사용★
+    public void insertRepeatRecord(int _id, int repeat_type, String start_date, String end_date) { //반복일정 추가 함수 - repeatSchedule100 에서 사용★
         Log.d("MainActivity", "insertRepeatRecord 실행됨");
 
         /*String sql1 = "SELECT * FROM schedule ORDER BY _id desc";   //맨마지막줄=방금입력된일정의 id를 받기 위함
@@ -599,6 +594,9 @@ public class MainActivity extends AppCompatActivity {
                 "', end_time = " + "'" + dend_time + "', repeat = " + drepeat + ", memo = " + "'" + dmemo +
                 "' WHERE _id = " + item_id;
 
+        if(timeItem.getRepeat() != drepeat)
+            repeatSchedule100(drepeat);
+
         database.execSQL(update_sql);
 
         assignTodo();
@@ -621,6 +619,9 @@ public class MainActivity extends AppCompatActivity {
                 "', start_time = " + "'" + dstart_time + "', end_date = " + "'" + dend_date +
                 "', end_time = " + "'" + dend_time + "', repeat = " + drepeat + ", memo = " + "'" + dmemo +
                 "' WHERE _id = " + item_id;
+
+        if(timeItem.getRepeat() != drepeat)
+            repeatSchedule100(drepeat);
 
         database.execSQL(update_sql);
 
@@ -742,10 +743,12 @@ public class MainActivity extends AppCompatActivity {
         Schedule item = items.get(0);
         //ori_id가 같고 시작날짜 같거나 뒤인 일정 삭제
         //리핏테이블 1->0
+        int ori = item.ori_id;
+        if(item.ori_id == 0) ori= item._id;
 
-        String delete_sql_after = "DELETE FROM schedule WHERE ori_id = '" + item.ori_id + "'AND start_date >= '" + item.start_date + "'";
-        String delete_sql_all = "DELETE FROM schedule WHERE ori_id = '" + item.ori_id + "'OR _id = '" + item.ori_id + "'";
-        String update_renew = "UPDATE repeat SET renew = 0 WHERE _id ='" + item.ori_id + "'";
+        String delete_sql_after = "DELETE FROM schedule WHERE (ori_id = '" + ori + "'OR _id = '" + ori + "') AND start_date >= '" + item.start_date + "'";
+        String delete_sql_all = "DELETE FROM schedule WHERE ori_id = '" + ori + "'OR _id = '" + ori + "'";
+        String update_renew = "UPDATE repeat SET renew = 0 WHERE _id ='" + ori + "'";
         if (type == 2) database.execSQL(delete_sql_after);
         else if (type == 3) database.execSQL(delete_sql_all);
         database.execSQL(update_renew);
@@ -787,12 +790,20 @@ public class MainActivity extends AppCompatActivity {
         ArrayList<Schedule> items = selectSchedule(sql2);
         Schedule item = items.get(0);
         //ori_id가 같고 시작날짜 같거나 뒤인 일정 삭제
-        //리핏테이블 1->0
+        //리핏테이블 1->
+        int ori = item.ori_id;
+        if(item.ori_id == 0) ori= item._id;
 
-        String delete_sql_after = "DELETE FROM schedule WHERE ori_id = '" + item.ori_id + "'AND start_date >= '" + item.start_date + "'";
-        String delete_sql_all = "DELETE FROM schedule WHERE ori_id = '" + item.ori_id + "'OR _id = '" + item.ori_id + "'";
-        String update_renew = "UPDATE repeat SET renew = 0 WHERE _id ='" + item.ori_id + "'";
-        if (type == 2) database.execSQL(delete_sql_after);
+        String delete_sql_after = "DELETE FROM schedule WHERE (ori_id = '" + ori + "'OR _id = '" + ori + "') AND start_date >= '" + item.start_date + "'";
+        String delete_sql_all = "DELETE FROM schedule WHERE ori_id = '" + ori + "'OR _id = '" + ori + "'";
+        String update_renew = "UPDATE repeat SET renew = 0 WHERE _id ='" + ori + "'";
+        if (type == 2) {
+            Log.d("MainActivity", "이거의스타트데이트" + item.start_date);
+            executeScheduleQuery();
+            database.execSQL(delete_sql_after);
+            Log.d("MainActivity", "그후");
+            executeScheduleQuery();
+        }
         else if (type == 3) database.execSQL(delete_sql_all);
         database.execSQL(update_renew);
 
@@ -1158,7 +1169,6 @@ public class MainActivity extends AppCompatActivity {
                 //일정테이블에 일정 추가
                 insertScheduleRecord(item3.getName(), item3.getLocation(), new_start_date, item3.getStart_time(),
                         new_end_date, item3.getEnd_time(), item3.getRepeat(), item3.getMemo(), item3.get_id());
-
             }
             //리핏테이블 시작일&종료일 바꾸기(최종반복일자로)
             String update_sql = "UPDATE repeat SET start_date = '" + new_start_date + "', end_date = '" + new_end_date + "' WHERE _id = '" + item3.get_id() + "'";
@@ -1225,7 +1235,7 @@ public class MainActivity extends AppCompatActivity {
                 inp_end_date = fm.format(cal2.getTime());
 
                 insertScheduleRecord(item_1st.getName(), item_1st.getLocation(), inp_start_date, item_1st.getStart_time(),
-                        inp_end_date, item_1st.getEnd_time(), repeat_type, item_1st.getMemo(), item_1st.getOri_id());
+                        inp_end_date, item_1st.getEnd_time(), repeat_type, item_1st.getMemo(), item_1st.get_id());
 
 //                cal.add(Calendar.DAY_OF_MONTH, -cnt);
 //                cal2.add(Calendar.DAY_OF_MONTH, -cnt);
@@ -1243,8 +1253,7 @@ public class MainActivity extends AppCompatActivity {
                 inp_end_date = fm.format(cal2.getTime());
 
                 insertScheduleRecord(item_1st.getName(), item_1st.getLocation(), inp_start_date, item_1st.getStart_time(),
-                        inp_end_date, item_1st.getEnd_time(), repeat_type, item_1st.getMemo(), item_1st.getOri_id());
-
+                        inp_end_date, item_1st.getEnd_time(), repeat_type, item_1st.getMemo(), item_1st.get_id());
 //                cal.add(Calendar.DAY_OF_MONTH, -cnt*7);
 //                cal2.add(Calendar.DAY_OF_MONTH, -cnt*7);
             }
@@ -1256,9 +1265,6 @@ public class MainActivity extends AppCompatActivity {
                 int firstdate2 = cal2.getActualMaximum(Calendar.DATE);
                 cal.add(Calendar.MONTH, cnt);
                 cal2.add(Calendar.MONTH, cnt);
-
-//                Calendar cal3 = cal;
-//                Calendar cal4 = cal2;
 
                 int lastdate = cal.getActualMaximum(Calendar.DATE); //변경된 달의 마지막 날
                 int lastdate2 = cal2.getActualMaximum(Calendar.DATE); //변경된 달의 마지막 날
@@ -1273,7 +1279,7 @@ public class MainActivity extends AppCompatActivity {
                 inp_end_date = fm.format(cal2.getTime());
 
                 insertScheduleRecord(item_1st.getName(), item_1st.getLocation(), inp_start_date, item_1st.getStart_time(),
-                        inp_end_date, item_1st.getEnd_time(), repeat_type, item_1st.getMemo(), item_1st.getOri_id());
+                        inp_end_date, item_1st.getEnd_time(), repeat_type, item_1st.getMemo(), item_1st.get_id());
 
                 cal = new GregorianCalendar(year, month - 1, day);
                 cal2 = new GregorianCalendar(year2, month2 - 1, day2);
@@ -1284,40 +1290,91 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void repeatSchedule_start(){ //앱 시작할 때 리핏 일정 갯수 유지하는 함수
-        /* 수정중
+    /*public void repeatSchedule_start(){ //앱 시작할 때 리핏 일정 갱신하는 함수
+        *//* 수정중
         어플을 켤 때마다 오늘 날짜 체크(갱신은 늘 최종시작날짜+다음날짜부터 추가)
         반복 테이블 모두 체크{
             일정 테이블에 ori_id = 반복테이블레코드i_id && 시작날짜>=오늘날짜인 일정 갯수 체크
             만약 100/52/12개 이하면 그만큼 추가
-        }
-        or
-        { 이걸로 가자!!!!!!!
-            만약 반복테이블레코드i의 최종 시작 날짜<(오늘 날짜+100/365/12달)
-            반복테이블레코드i의 최종 시작 날짜<(오늘 날짜+100/365/12달)까지 일정에 추가, 반복 시작 날짜 갱신(최종 시작 날짜 제외하고 추가)
-        }
-         */
+        }         *//*
         Calendar cal = Calendar.getInstance();
         SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd");
         String date = format.format(Calendar.getInstance().getTime());
 
-        //이거 삭제할 듯....
-        try {
-            Cursor cursor = database.rawQuery("SELECT * FROM repeat", null);
-            Cursor cursor2 = database.rawQuery("SELECT * FROM schedule WHERE ", null);
+        //일단 리핏 테이블 순회 함당
 
+        String sql = "SELECT * FROM schedule WHERE (ori_id = _id(repeat) OR _id = _id(repeat)) AND start_date >= today";
+        database.execSQL(sql);
 
-            for (int i = 0; i < cursor.getCount(); i++) {
-                cursor.moveToNext();
-                int r_id = cursor.getInt(0);
+        if(리핏타입==2) {
+            int more = 100 - count(sql);
+            while (more < 100) {
+                cal.add(Calendar.DAY_OF_MONTH, 1);
+                cal2.add(Calendar.DAY_OF_MONTH, 1);
+
+                inp_start_date = fm.format(cal.getTime());
+                inp_end_date = fm.format(cal2.getTime());
+
+                insertScheduleRecord(item_1st.getName(), item_1st.getLocation(), inp_start_date, item_1st.getStart_time(),
+                        inp_end_date, item_1st.getEnd_time(), repeat_type, item_1st.getMemo(), item_1st.get_id());
+                more++;
             }
-            cursor.close();
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
-   }
+        if(리핏타입==3) {
+            int more = 52 - count(sql);
+            while (more < 52) {
+                cal.add(Calendar.DAY_OF_MONTH, 7);
+                cal2.add(Calendar.DAY_OF_MONTH, 7);
+
+                inp_start_date = fm.format(cal.getTime());
+                inp_end_date = fm.format(cal2.getTime());
+
+                insertScheduleRecord(item_1st.getName(), item_1st.getLocation(), inp_start_date, item_1st.getStart_time(),
+                        inp_end_date, item_1st.getEnd_time(), repeat_type, item_1st.getMemo(), item_1st.get_id());
+                more++;
+            }
+        }
+
+        if(리핏타입==4) {
+            int more = 12 - count(sql);
+            while (more < 12) {
+
+                int firstdate = cal.getActualMaximum(Calendar.DATE);
+                int firstdate2 = cal2.getActualMaximum(Calendar.DATE);
+                cal.add(Calendar.MONTH, cnt);
+                cal2.add(Calendar.MONTH, cnt);
+
+                int lastdate = cal.getActualMaximum(Calendar.DATE); //변경된 달의 마지막 날
+                int lastdate2 = cal2.getActualMaximum(Calendar.DATE); //변경된 달의 마지막 날
+
+                if(firstdate>lastdate || firstdate2>lastdate2) {
+                    cal = new GregorianCalendar(year, month - 1, day);
+                    cal2 = new GregorianCalendar(year2, month2 - 1, day2);
+                    continue;
+                }
+
+                inp_start_date = fm.format(cal.getTime());
+                inp_end_date = fm.format(cal2.getTime());
+
+                insertScheduleRecord(item_1st.getName(), item_1st.getLocation(), inp_start_date, item_1st.getStart_time(),
+                        inp_end_date, item_1st.getEnd_time(), repeat_type, item_1st.getMemo(), item_1st.get_id());
+
+                cal = new GregorianCalendar(year, month - 1, day);
+                cal2 = new GregorianCalendar(year2, month2 - 1, day2);
+
+                more++;
+            }
+        }
+
+
+        String update_sql = "UPDATE repeat SET start_date = '" + inp_start_date + "', end_date = '" + inp_end_date + "' WHERE _id = '" + items(i).get_id() + "'";
+        //Log.d("MainActivity", "아이디 : " + item3.get_id());
+        database.execSQL(update_sql);
+
+        Log.d("MainActivity", "달력 업데이트 완료_테스트");
+
+   }*/
 
     /*
 할 일 알림 함수 - 할 일의 시작 시간이 되면 상단바 알림
