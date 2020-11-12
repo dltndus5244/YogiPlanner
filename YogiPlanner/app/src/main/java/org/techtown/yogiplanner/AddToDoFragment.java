@@ -15,7 +15,9 @@ import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -35,6 +37,7 @@ public class AddToDoFragment extends Fragment {
     SimpleDateFormat simpleDateFormat2 = new SimpleDateFormat("HH:mm");
 
     MonthFragment monthFragment = new MonthFragment();
+    Boolean exception = false;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -62,6 +65,7 @@ public class AddToDoFragment extends Fragment {
 
         // 시간 선택 창
         calendar1 = Calendar.getInstance();
+        calendar1.add(Calendar.HOUR_OF_DAY, 1);
         time.setText(calendar1.get(Calendar.HOUR_OF_DAY)+":00");
 
         time.setOnClickListener(new View.OnClickListener() {
@@ -91,12 +95,45 @@ public class AddToDoFragment extends Fragment {
                 float _priority = (float) getRemainTime(_date, _time) / Float.parseFloat(_reqTime);
                 Log.d("Todo", "우선순위 : " + _priority);
 
-                ((MainActivity)getActivity()).insertTodoRecord(_name, _date, _time, _reqTime, _memo, _priority);
+                try {
+                    Date dDate = simpleDateFormat.parse(_date);
+                    Date dTime = simpleDateFormat2.parse(_time);
 
-                ((MainActivity)getActivity()).assignTodo();
-                clearText();
+                    Calendar calendar = Calendar.getInstance();
+                    String sCurDate = simpleDateFormat.format(calendar.getTime());
+                    String sCurTime = simpleDateFormat2.format(calendar.getTime());
 
-                ((MainActivity)getActivity()).replaceFragment(monthFragment);
+                    Date dCurDate = simpleDateFormat.parse(sCurDate); //현재날짜
+                    Date dCurTime = simpleDateFormat2.parse(sCurTime); //현재시간
+
+                    //dDate와 dCurDate가 같으면 시간 비교(dTime이 dCurTime보다 작으면 안됨)
+                    //dDate가 dCurDate보다 작으면 안됨
+
+                    if (dDate.before(dCurDate)) {
+                        Toast.makeText(getContext(), "날짜를 다시 입력하세요!", Toast.LENGTH_LONG).show();
+                        exception = true;
+                    } else if (dDate.equals(dCurDate) && dTime.before(dCurTime)) {
+                        Toast.makeText(getContext(), "시간을 다시 입력하세요!", Toast.LENGTH_LONG).show();
+                        exception = true;
+                    } else {
+                        exception = false;
+                    }
+
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+
+                if (exception == false) {
+
+                    ((MainActivity)getActivity()).insertTodoRecord(_name, _date, _time, _reqTime, _memo, _priority);
+
+                    ((MainActivity)getActivity()).assignTodo();
+                    clearText();
+
+                    ((MainActivity)getActivity()).replaceFragment(monthFragment);
+                }
+
+
             }
         });
 

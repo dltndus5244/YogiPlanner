@@ -362,9 +362,7 @@ public class WeekFragment extends Fragment {
 
                 mPosition = startPosition;
 
-                final Random mRandom = new Random(week_items.get(i).getItem_id());
-
-                /*//같은 일정은 같은 색으로 표시
+                //같은 일정은 같은 색으로 표시
                 int my_id; //색 결정할 time테이블에서의 id
 
                 final String item_type = week_items.get(i).getType();
@@ -373,19 +371,16 @@ public class WeekFragment extends Fragment {
 
                     Cursor cursor = ((MainActivity) getActivity()).database.rawQuery("SELECT * from schedule WHERE _id = " + week_items.get(i).getItem_id(), null);
                     cursor.moveToFirst();
-                    int ori_id = cursor.getInt(9);
-                    if (ori_id == 0) {
-                        my_id = week_items.get(i).get_id();
-                    } else {
-                        Cursor cursor2 = ((MainActivity) getActivity()).database.rawQuery("SELECT _id from time WHERE item_id = " + ori_id, null);
-                        cursor2.moveToFirst();
-                        my_id = cursor2.getInt(0);
+                    my_id = cursor.getInt(9);
+                    if (my_id == 0) {
+                        my_id = week_items.get(i).getItem_id();
                     }
+
                 }
                 else if(item_type.equals("todo")) my_id = week_items.get(i).get_id();
                 else my_id = 0;
 
-                final Random mRandom = new Random(my_id);*/
+                final Random mRandom = new Random(my_id);
 
                 final int baseColor = Color.WHITE;
 

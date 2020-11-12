@@ -158,6 +158,8 @@ public class MainActivity extends AppCompatActivity {
 //        database.execSQL("DELETE FROM todo");
 //        database.execSQL("DELETE FROM repeat");
 
+
+
     }
 
     private void toggleFab() {
@@ -1225,7 +1227,7 @@ public class MainActivity extends AppCompatActivity {
         Calendar cal2 = new GregorianCalendar(year2, month2 - 1, day2);
 
         if(repeat_type == 2){//매일반복 99개
-            for(int cnt = 1; cnt<100; cnt++){
+            for(int cnt = 1; cnt<30; cnt++){
                 cal.add(Calendar.DAY_OF_MONTH, 1);
                 cal2.add(Calendar.DAY_OF_MONTH, 1);
 //                cal.add(Calendar.DAY_OF_MONTH, cnt); //일단 너무 느려서...
@@ -1243,7 +1245,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if(repeat_type == 3){//매주반복 51개
-            for(int cnt = 1; cnt<52; cnt++){
+            for(int cnt = 1; cnt<4; cnt++){
                 cal.add(Calendar.DAY_OF_MONTH, 7);
                 cal2.add(Calendar.DAY_OF_MONTH, 7);
 //                cal.add(Calendar.DAY_OF_MONTH, cnt*7);
@@ -1260,7 +1262,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if(repeat_type == 4){//매월반복 11개
-            for(int cnt = 1; cnt<12; cnt++){
+            for(int cnt = 1; cnt<3; cnt++){
                 int firstdate = cal.getActualMaximum(Calendar.DATE);
                 int firstdate2 = cal2.getActualMaximum(Calendar.DATE);
                 cal.add(Calendar.MONTH, cnt);

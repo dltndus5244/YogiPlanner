@@ -53,6 +53,7 @@ public class MonthFragment extends Fragment {
     int curMonth;
 
     ArrayList<String> isTodoOwn = new ArrayList<>();
+    ArrayList<String> isScheduleOwn = new ArrayList<>();
 
     static String click_date;
 
@@ -149,6 +150,7 @@ public class MonthFragment extends Fragment {
 
     public void setCalendarDate(int month) { //날짜를 채워주는 함수
         isTodoOwn.clear();
+        isScheduleOwn.clear();
         dayList.clear();
         mCal.set(Calendar.MONTH, month - 1);
 
@@ -167,17 +169,20 @@ public class MonthFragment extends Fragment {
 
         if (curMonthItems.size() > 0) {
             for (int i = 0; i < curMonthItems.size(); i++) {
+                String[] date = curMonthItems.get(i).getStart_date().split("/");
                 if (curMonthItems.get(i).getType().equals("todo")) {
-                    String[] date = curMonthItems.get(i).getStart_date().split("/");
                     if (isTodoOwn.contains(date[2]) == false)
                         isTodoOwn.add(date[2]);
+                } else if (curMonthItems.get(i).getType().equals("schedule")) {
+                    if (isScheduleOwn.contains(date[2]) == false)
+                        isScheduleOwn.add(date[2]);
                 }
             }
         }
 
         Log.d("MonthFragment", "-----");
-        for (int i=0; i<isTodoOwn.size(); i++) {
-            Log.d("MonthFragment", isTodoOwn.get(i)+"");
+        for (int i=0; i<isScheduleOwn.size(); i++) {
+            Log.d("MonthFragment", isScheduleOwn.get(i)+"");
         }
     }
 
@@ -309,6 +314,10 @@ public class MonthFragment extends Fragment {
             //할 일이 있는 날짜면 별 표시
             if (isTodoOwn.contains(getItem(position))) {
                 holder.imageView.setImageResource(R.drawable.star);
+            }
+
+            if (isScheduleOwn.contains(getItem(position)) && isTodoOwn.contains(getItem(position)) == false) {
+                holder.imageView.setImageResource(R.drawable.color_dot);
             }
 
             return convertView;
