@@ -30,10 +30,11 @@
             android:id="@+id/empty_view"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
+            android:layout_below="@+id/no_active_jobs"
             android:layout_centerInParent="true"
+            android:layout_marginTop="10dp"
             android:text="할 일이 없어요!"
-            android:textSize="30sp"
-            android:layout_below="@+id/no_active_jobs"/>
+            android:textSize="20sp" />
 
     </RelativeLayout>
 
