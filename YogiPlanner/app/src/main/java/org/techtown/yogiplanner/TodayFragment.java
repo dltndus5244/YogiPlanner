@@ -10,6 +10,8 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
+import android.widget.ImageView;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -20,6 +22,8 @@ public class TodayFragment extends Fragment {
     static TodoAdapter adapter;
     static int passedPosition;
     static RecyclerView recyclerView;
+    static TextView textview;
+    static ImageView imageview;
 
     public static ArrayList<Todo> items;
 
@@ -30,6 +34,8 @@ public class TodayFragment extends Fragment {
         ViewGroup rootView = (ViewGroup) inflater.inflate(R.layout.fragment_today, container, false);
 
         recyclerView = rootView.findViewById(R.id.recyclerView);
+        textview = (TextView) rootView.findViewById(R.id.empty_view);
+        imageview = (ImageView) rootView.findViewById(R.id.no_active_jobs);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
         recyclerView.setLayoutManager(layoutManager);
@@ -47,8 +53,18 @@ public class TodayFragment extends Fragment {
         String sql = "SELECT * FROM todo WHERE (date = '" + todayDate + "' AND time >= '" + todayTime + "') OR date > '" + todayDate + "' ORDER BY date, time";
         items = ((MainActivity) getActivity()).selectTodo(sql);
 
-
         adapter.setItems(items);
+
+        if (items.isEmpty()) {
+            recyclerView.setVisibility(View.GONE);
+            imageview.setVisibility(View.VISIBLE);
+            textview.setVisibility(View.VISIBLE);
+        }
+        else {
+            recyclerView.setVisibility(View.VISIBLE);
+            imageview.setVisibility(View.GONE);
+            textview.setVisibility(View.GONE);
+        }
 
         adapter.setOnItemClickListener(new OnTodoItemClickListener() {
             @Override
