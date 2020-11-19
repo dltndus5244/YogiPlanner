@@ -204,7 +204,7 @@ public class AddScheduleFragment extends Fragment {
                     ((MainActivity)getActivity()).insertScheduleRecord(_name, _location, _start_date, _start_time,
                                 _end_date, _end_time, _repeat, _memo, 0);
 
-                    //삭제할수도 ※
+
                     if(_repeat ==  2 || _repeat == 3 || _repeat == 4){
                         ((MainActivity)getActivity()).repeatSchedule100(_repeat);
                     }
