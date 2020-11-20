@@ -377,7 +377,7 @@ public class WeekFragment extends Fragment {
                     }
 
                 }
-                else if(item_type.equals("todo")) my_id = week_items.get(i).get_id();
+                else if(item_type.equals("todo")) my_id = week_items.get(i).getItem_id() + 365;
                 else my_id = 0;
 
                 final Random mRandom = new Random(my_id);
