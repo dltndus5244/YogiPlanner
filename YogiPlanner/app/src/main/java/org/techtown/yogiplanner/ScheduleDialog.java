@@ -130,6 +130,10 @@ public class ScheduleDialog extends Dialog { //MonthFragment에서 사용하는 
         }
         else if (repeat == -1) {
             radioButton1.setChecked(true);
+            radioButton1.setClickable(false);
+            radioButton2.setClickable(false);
+            radioButton3.setClickable(false);
+            radioButton4.setClickable(false);
         }
 
         memo.setText(item.getMemo());

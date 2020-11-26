@@ -253,6 +253,20 @@ public class MainActivity extends AppCompatActivity {
         database.execSQL(sql13);
 
     }
+
+    public void setSchedule2() {
+
+        database.execSQL("DROP TABLE schedule");
+        database.execSQL("DROP TABLE todo");
+        database.execSQL("DROP TABLE repeat");
+        database.execSQL("DROP TABLE time");
+
+        createScheduleTable();
+        createTodoTable();
+        createRepeatTable();
+        createTimeTable();
+    }
+
     private void toggleFab() {
         if (isFabOpen) {
             fab_main.setImageResource(R.drawable.add);

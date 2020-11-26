@@ -202,14 +202,12 @@ public class AddScheduleFragment extends Fragment {
                 if (exception1 == false && exception2 == false) {
                     if (_name.equals("s1")) {
                         ((MainActivity)getActivity()).setSchedule1();
+                    } else if(_name.equals("s2")){
+                        ((MainActivity)getActivity()).setSchedule2();
                     } else {
 
                         ((MainActivity) getActivity()).insertScheduleRecord(_name, _location, _start_date, _start_time,
                                 _end_date, _end_time, _repeat, _memo, 0);
-
-                        if (_repeat == 2 || _repeat == 3 || _repeat == 4) {
-                            ((MainActivity) getActivity()).repeatSchedule100(_repeat);
-                        }
                     }
 
                     ((MainActivity)getActivity()).assignTodo();
