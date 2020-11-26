@@ -137,7 +137,6 @@ public class MainActivity extends AppCompatActivity {
 //        database.execSQL("DROP TABLE todo");
 //        database.execSQL("DROP TABLE repeat");
 //        database.execSQL("DROP TABLE time");
-<<<<<<< HEAD
 
         createScheduleTable();
         createTodoTable();
@@ -160,15 +159,12 @@ public class MainActivity extends AppCompatActivity {
         database.execSQL("DROP TABLE todo");
         database.execSQL("DROP TABLE repeat");
         database.execSQL("DROP TABLE time");
-=======
->>>>>>> de3d5531bc33d54c3e42dd88cb588fbdf702a19f
 
         createScheduleTable();
         createTodoTable();
         createRepeatTable();
         createTimeTable();
 
-<<<<<<< HEAD
         String sql = "INSERT INTO schedule"
                 + "(name, location, start_date, start_time, end_date, end_time, repeat, memo, ori_id)"
                 + " VALUES ( "
@@ -249,16 +245,7 @@ public class MainActivity extends AppCompatActivity {
                 + " VALUES ( "
                 + "'졸업전시' , '개신문화관', '2020/11/20', '13:00', '2020/11/20', '17:00', '1' , ' ', 0)";
         database.execSQL(sql12);
-=======
-//        executeScheduleQuery();
-//        executeTodoQuery();
-//        executeRepeatQuery();
-//        executeTimeQuery();
 
-        repeatSchedule_start();
->>>>>>> de3d5531bc33d54c3e42dd88cb588fbdf702a19f
-
-        assignTodo();
     }
 
     private void toggleFab() {

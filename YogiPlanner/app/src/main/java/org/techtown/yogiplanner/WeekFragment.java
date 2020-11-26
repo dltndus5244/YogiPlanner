@@ -54,6 +54,8 @@ public class WeekFragment extends Fragment {
     ArrayList<String> isTodoOwn = new ArrayList<>();
 
 
+
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
@@ -166,6 +168,45 @@ public class WeekFragment extends Fragment {
 
             if (year == curYear && month == curMonth &&week == curWeek) {
                 week_items.add(items.get(i));
+            }
+        }
+
+        if (curWeek == findMaxWeek()) {
+            //마지막 주 일경우..에는 해당 월의 마지막날의 요일을 가져와서
+            //마지막 주의 마지막 요일까지 + 그리고 그 다움주의 토요일까지지
+            Calendar calendar = Calendar.getInstance();
+            calendar.set(Calendar.YEAR, curYear);
+            calendar.set(Calendar.MONTH, curMonth-1);
+
+            int lastDate = calendar.getActualMaximum(Calendar.DATE);
+            calendar.set(Calendar.DATE, lastDate);
+            int lastDayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+            Log.d("WeekFragment","마지막 날 요일 : " + lastDayOfWeek);
+
+            if (lastDayOfWeek < 7) {
+                for (int i=0; i<items.size(); i++) {
+                    String start_date = items.get(i).getStart_date();
+                    String splitDate[] = start_date.split("/");
+
+                    int year = Integer.parseInt(splitDate[0]);
+                    int month = Integer.parseInt(splitDate[1]);
+                    int day = Integer.parseInt(splitDate[2]);
+
+                    cal.set(year, month-1, day);
+                    week = cal.get(Calendar.WEEK_OF_MONTH);
+
+                    if (curMonth == 12) {
+                        if (year == curYear+1 && month == 1 && week == 1) {
+                            week_items.add(items.get(i));
+                        }
+                    }
+
+                    else {
+                        if (year == curYear && month == curMonth + 1 && week == 1) {
+                            week_items.add(items.get(i));
+                        }
+                    }
+                }
             }
         }
 
@@ -383,7 +424,6 @@ public class WeekFragment extends Fragment {
                 final Random mRandom = new Random(my_id);
 
                 final int baseColor = Color.WHITE;
-
                 final int baseRed = Color.red(baseColor);
                 final int baseGreen = Color.green(baseColor);
                 final int baseBlue = Color.blue(baseColor);
