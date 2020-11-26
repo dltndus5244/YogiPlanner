@@ -246,8 +246,13 @@ public class MainActivity extends AppCompatActivity {
                 + "'졸업전시' , '개신문화관', '2020/11/20', '13:00', '2020/11/20', '17:00', '1' , ' ', 0)";
         database.execSQL(sql12);
 
-    }
+        String sql13 = "INSERT INTO schedule"
+                + "(name, location, start_date, start_time, end_date, end_time, repeat, memo, ori_id)"
+                + " VALUES ( "
+                + "'약속' , '성안길', '2020/11/29', '08:00', '2020/11/29', '17:00', '1' , ' ', 0)";
+        database.execSQL(sql13);
 
+    }
     private void toggleFab() {
         if (isFabOpen) {
             fab_main.setImageResource(R.drawable.add);

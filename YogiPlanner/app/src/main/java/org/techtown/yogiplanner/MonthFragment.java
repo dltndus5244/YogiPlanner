@@ -170,12 +170,16 @@ public class MonthFragment extends Fragment {
         if (curMonthItems.size() > 0) {
             for (int i = 0; i < curMonthItems.size(); i++) {
                 String[] date = curMonthItems.get(i).getStart_date().split("/");
+                String day = date[2];
+                if (day.indexOf('0') == 0) {
+                    day = day.substring(1);
+                }
                 if (curMonthItems.get(i).getType().equals("todo")) {
-                    if (isTodoOwn.contains(date[2]) == false)
-                        isTodoOwn.add(date[2]);
+                    if (isTodoOwn.contains(day) == false)
+                        isTodoOwn.add(day);
                 } else if (curMonthItems.get(i).getType().equals("schedule")) {
-                    if (isScheduleOwn.contains(date[2]) == false)
-                        isScheduleOwn.add(date[2]);
+                    if (isScheduleOwn.contains(day) == false)
+                        isScheduleOwn.add(day);
                 }
             }
         }

@@ -404,24 +404,24 @@ public class WeekFragment extends Fragment {
                 mPosition = startPosition;
 
                 //같은 일정은 같은 색으로 표시
-                int my_id; //색 결정할 time테이블에서의 id
+//                int my_id; //색 결정할 time테이블에서의 id
+//
+//                final String item_type = week_items.get(i).getType();
+//
+//                if(item_type.equals("schedule")) {
+//
+//                    Cursor cursor = ((MainActivity) getActivity()).database.rawQuery("SELECT * from schedule WHERE _id = " + week_items.get(i).getItem_id(), null);
+//                    cursor.moveToFirst();
+//                    my_id = cursor.getInt(9);
+//                    if (my_id == 0) {
+//                        my_id = week_items.get(i).getItem_id();
+//                    }
+//
+//                }
+//                else if(item_type.equals("todo")) my_id = week_items.get(i).getItem_id() + 365;
+//                else my_id = 0;
 
-                final String item_type = week_items.get(i).getType();
-
-                if(item_type.equals("schedule")) {
-
-                    Cursor cursor = ((MainActivity) getActivity()).database.rawQuery("SELECT * from schedule WHERE _id = " + week_items.get(i).getItem_id(), null);
-                    cursor.moveToFirst();
-                    my_id = cursor.getInt(9);
-                    if (my_id == 0) {
-                        my_id = week_items.get(i).getItem_id();
-                    }
-
-                }
-                else if(item_type.equals("todo")) my_id = week_items.get(i).getItem_id() + 365;
-                else my_id = 0;
-
-                final Random mRandom = new Random(my_id);
+                final Random mRandom = new Random(week_items.get(i).getItem_id());
 
                 final int baseColor = Color.WHITE;
                 final int baseRed = Color.red(baseColor);
